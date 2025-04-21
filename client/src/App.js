@@ -18,22 +18,28 @@ function App() {
     youtube: 'Checking...'
   });
 
+  // Function to check API status
+  const refreshApiStatus = async () => {
+    setApiStatus({
+      openai: 'Checking...',
+      youtube: 'Checking...'
+    });
+    
+    try {
+      const response = await axios.get('/api/status');
+      setApiStatus(response.data);
+    } catch (error) {
+      console.error('Error checking API status:', error);
+      setApiStatus({
+        openai: 'Disconnected',
+        youtube: 'Disconnected'
+      });
+    }
+  };
+
   // Check API status on component mount
   useEffect(() => {
-    const checkApiStatus = async () => {
-      try {
-        const response = await axios.get('/api/status');
-        setApiStatus(response.data);
-      } catch (error) {
-        console.error('Error checking API status:', error);
-        setApiStatus({
-          openai: 'Disconnected',
-          youtube: 'Disconnected'
-        });
-      }
-    };
-
-    checkApiStatus();
+    refreshApiStatus();
   }, []);
 
   return (
@@ -42,7 +48,7 @@ function App() {
       
       <main className="main-content">
         <Routes>
-          <Route path="/" element={<LandingPage apiStatus={apiStatus} />} />
+          <Route path="/" element={<LandingPage apiStatus={apiStatus} refreshApiStatus={refreshApiStatus} />} />
           <Route path="/profile" element={<UserProfilePage />} />
           <Route path="/recipe-extractor" element={<RecipeExtractorPage />} />
         </Routes>

@@ -22,11 +22,33 @@
   z-index: 100;
 }
 
+.api-status-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
 .api-status h4 {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0;
   font-size: 0.9rem;
   text-transform: uppercase;
   letter-spacing: 1px;
+}
+
+.btn-refresh {
+  background-color: var(--dark-bg);
+  color: var(--light-text);
+  border: none;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-refresh:hover {
+  background-color: var(--accent-color);
 }
 
 .status-indicator {
@@ -59,7 +81,20 @@
 }
 
 .status-dot.checking {
-  background-color: var(--accent-color);
+  background-color: #FFC107;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.6;
+  }
 }
 
 /* Gordon Ramsay quote popup styles */

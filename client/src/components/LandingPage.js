@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import '../styles/LandingPage.css';
 
-const LandingPage = ({ apiStatus }) => {
+const LandingPage = ({ apiStatus, refreshApiStatus }) => {
   const [gameActive, setGameActive] = useState(false);
   const [score, setScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(60);
@@ -215,13 +215,18 @@ const LandingPage = ({ apiStatus }) => {
       
       {/* API Status indicator */}
       <div className="api-status">
-        <h4>API Status</h4>
+        <div className="api-status-header">
+          <h4>API Status</h4>
+          <button onClick={refreshApiStatus} className="btn btn-refresh">
+            Refresh
+          </button>
+        </div>
         <div className="status-indicator">
-          <div className={`status-dot ${apiStatus.openai === 'Connected' ? 'connected' : 'disconnected'}`}></div>
+          <div className={`status-dot ${apiStatus.openai === 'Connected' ? 'connected' : apiStatus.openai === 'Checking...' ? 'checking' : 'disconnected'}`}></div>
           <span>OpenAI API: {apiStatus.openai}</span>
         </div>
         <div className="status-indicator">
-          <div className={`status-dot ${apiStatus.youtube === 'Connected' ? 'connected' : 'disconnected'}`}></div>
+          <div className={`status-dot ${apiStatus.youtube === 'Connected' ? 'connected' : apiStatus.youtube === 'Checking...' ? 'checking' : 'disconnected'}`}></div>
           <span>YouTube API: {apiStatus.youtube}</span>
         </div>
       </div>

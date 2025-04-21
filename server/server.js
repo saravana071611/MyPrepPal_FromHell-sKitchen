@@ -27,11 +27,41 @@ app.use('/api/youtube', youtubeRoutes);
 app.use('/api/user', userRoutes);
 
 // API status endpoint
-app.get('/api/status', (req, res) => {
+app.get('/api/status', async (req, res) => {
   const status = {
-    openai: process.env.OPENAI_API_KEY ? 'Connected' : 'Disconnected',
-    youtube: process.env.YOUTUBE_API_KEY ? 'Connected' : 'Disconnected'
+    openai: 'Disconnected',
+    youtube: 'Disconnected'
   };
+
+  // Test OpenAI API
+  if (process.env.OPENAI_API_KEY) {
+    try {
+      const { Configuration, OpenAIApi } = require('openai');
+      const configuration = new Configuration({
+        apiKey: process.env.OPENAI_API_KEY,
+      });
+      const openai = new OpenAIApi(configuration);
+      
+      // Simple model list request to verify connectivity
+      await openai.listModels();
+      status.openai = 'Connected';
+    } catch (error) {
+      console.error('OpenAI API test failed:', error.message);
+    }
+  }
+
+  // Test YouTube API 
+  if (process.env.YOUTUBE_API_KEY) {
+    try {
+      // Test with ytdl-core by getting info for a known video ID
+      const ytdl = require('ytdl-core');
+      await ytdl.getBasicInfo('dQw4w9WgXcQ');
+      status.youtube = 'Connected';
+    } catch (error) {
+      console.error('YouTube API test failed:', error.message);
+    }
+  }
+
   res.json(status);
 });
 
