@@ -1,0 +1,113 @@
+/* Base styles and CSS reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  /* Hell's Kitchen themed colors */
+  --red-team: #e63946;
+  --blue-team: #457b9d;
+  --dark-bg: #1a1a1a;
+  --darker-bg: #121212;
+  --gray-element: #333333;
+  --light-text: #f1faee;
+  --accent-color: #ffd166;
+}
+
+body {
+  font-family: 'Montserrat', sans-serif;
+  background-color: var(--dark-bg);
+  color: var(--light-text);
+  line-height: 1.6;
+}
+
+a {
+  color: var(--light-text);
+  text-decoration: none;
+}
+
+button {
+  cursor: pointer;
+  font-family: 'Montserrat', sans-serif;
+}
+
+/* Container styles */
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+/* Utility classes */
+.text-center {
+  text-align: center;
+}
+
+.mt-2 {
+  margin-top: 1rem;
+}
+
+.mb-2 {
+  margin-bottom: 1rem;
+}
+
+.py-2 {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+
+/* Button styles */
+.btn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 4px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.btn-primary {
+  background-color: var(--red-team);
+  color: var(--light-text);
+}
+
+.btn-primary:hover {
+  background-color: #d32636;
+}
+
+.btn-secondary {
+  background-color: var(--blue-team);
+  color: var(--light-text);
+}
+
+.btn-secondary:hover {
+  background-color: #3a6a8a;
+}
+
+/* Form styles */
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.form-control {
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px solid var(--gray-element);
+  border-radius: 4px;
+  background-color: var(--darker-bg);
+  color: var(--light-text);
+  font-size: 1rem;
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: var(--accent-color);
+}

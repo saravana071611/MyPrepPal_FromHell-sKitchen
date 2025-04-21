@@ -1,0 +1,104 @@
+/* Main application layout styles */
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.main-content {
+  flex: 1;
+  padding: 2rem 0;
+}
+
+/* API Status indicator styles */
+.api-status {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  background-color: var(--darker-bg);
+  padding: 0.75rem;
+  border-radius: 4px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  z-index: 100;
+}
+
+.api-status h4 {
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.status-indicator:last-child {
+  margin-bottom: 0;
+}
+
+.status-indicator span {
+  margin-left: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.status-dot.connected {
+  background-color: #4CAF50;
+}
+
+.status-dot.disconnected {
+  background-color: var(--red-team);
+}
+
+.status-dot.checking {
+  background-color: var(--accent-color);
+}
+
+/* Gordon Ramsay quote popup styles */
+.ramsay-quote-popup {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: var(--red-team);
+  color: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+  max-width: 500px;
+  z-index: 1000;
+  text-align: center;
+  font-weight: bold;
+  font-size: 1.25rem;
+  animation: popIn 0.3s ease-out forwards;
+}
+
+@keyframes popIn {
+  0% { 
+    opacity: 0;
+    transform: translate(-50%, -60%); 
+  }
+  100% { 
+    opacity: 1;
+    transform: translate(-50%, -50%); 
+  }
+}
+
+/* Overlay for popups */
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.75);
+  z-index: 999;
+}

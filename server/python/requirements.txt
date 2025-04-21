@@ -1,0 +1,9 @@
+# YouTube Audio Extraction & Processing
+pytube>=12.1.2
+pydub>=0.25.1
+
+# OpenAI Integration
+openai>=0.27.0
+
+# Audio Processing
+ffmpeg-python>=0.2.0

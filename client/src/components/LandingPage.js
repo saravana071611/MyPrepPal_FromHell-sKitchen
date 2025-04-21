@@ -1,0 +1,242 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
+import '../styles/LandingPage.css';
+
+const LandingPage = ({ apiStatus }) => {
+  const [gameActive, setGameActive] = useState(false);
+  const [score, setScore] = useState(0);
+  const [timeLeft, setTimeLeft] = useState(60);
+  const [foods, setFoods] = useState([]);
+  const [showQuote, setShowQuote] = useState(false);
+  const [currentQuote, setCurrentQuote] = useState('');
+  const gameAreaRef = useRef(null);
+  const gameIntervalRef = useRef(null);
+  const timerIntervalRef = useRef(null);
+
+  // Gordon Ramsay's iconic scolding quotes
+  const ramsayQuotes = [
+    "IT'S RAW! You donkey!",
+    "Where's the lamb sauce?! You're cooking in a dream world!",
+    "This food is so undercooked it's still running around the field!",
+    "I've never, ever, ever, ever met someone I believe in as little as you.",
+    "My gran could do better! And she's dead!",
+    "This chicken is so raw it's still asking why it crossed the road!",
+    "This squid is so undercooked I can still hear it telling Spongebob to F**K OFF!",
+    "You put so much oil in this pan the U.S. wants to invade it!",
+    "There's enough garlic in here to kill every vampire in EUROPE!",
+    "This fish is so raw it's still finding Nemo!",
+    "This pizza is so disgusting, if you take it to Italy you'll get arrested!",
+    "You're donut! An idiot sandwich!",
+    "This crab is so undercooked it's still singing 'Under the Sea'!",
+    "This beef is so raw it's eating the salad!",
+    "The chicken is so raw that a skilled vet could still save it!",
+    "This risotto is so undercooked, Gordon Ramsay is still running around looking for the rice!",
+    "Do me a favor, shut your pie hole!",
+    "I wouldn't trust you running a bath, let alone a restaurant!",
+    "This is a really tough decision... because you're both crap!",
+    "Your food tastes like garbage! Absolute garbage!"
+  ];
+
+  // Foods for the game (healthy and unhealthy)
+  const foodItems = [
+    { name: 'Apple', image: 'apple.png', isHealthy: true },
+    { name: 'Broccoli', image: 'broccoli.png', isHealthy: true },
+    { name: 'Carrot', image: 'carrot.png', isHealthy: true },
+    { name: 'Spinach', image: 'spinach.png', isHealthy: true },
+    { name: 'Chicken', image: 'chicken.png', isHealthy: true },
+    { name: 'Fish', image: 'fish.png', isHealthy: true },
+    { name: 'Eggs', image: 'eggs.png', isHealthy: true },
+    { name: 'Nuts', image: 'nuts.png', isHealthy: true },
+    { name: 'Avocado', image: 'avocado.png', isHealthy: true },
+    { name: 'Berries', image: 'berries.png', isHealthy: true },
+    { name: 'Burger', image: 'burger.png', isHealthy: false },
+    { name: 'Pizza', image: 'pizza.png', isHealthy: false },
+    { name: 'Fries', image: 'fries.png', isHealthy: false },
+    { name: 'Donut', image: 'donut.png', isHealthy: false },
+    { name: 'Cake', image: 'cake.png', isHealthy: false },
+    { name: 'Ice Cream', image: 'ice-cream.png', isHealthy: false },
+    { name: 'Soda', image: 'soda.png', isHealthy: false },
+    { name: 'Candy', image: 'candy.png', isHealthy: false },
+    { name: 'Hot Dog', image: 'hot-dog.png', isHealthy: false },
+    { name: 'Chips', image: 'chips.png', isHealthy: false }
+  ];
+
+  // Start game function
+  const startGame = () => {
+    setGameActive(true);
+    setScore(0);
+    setTimeLeft(60);
+    setFoods([]);
+    
+    // Start timer
+    timerIntervalRef.current = setInterval(() => {
+      setTimeLeft(prevTime => {
+        if (prevTime <= 1) {
+          clearInterval(timerIntervalRef.current);
+          clearInterval(gameIntervalRef.current);
+          setGameActive(false);
+          return 0;
+        }
+        return prevTime - 1;
+      });
+    }, 1000);
+    
+    // Start spawning foods
+    gameIntervalRef.current = setInterval(spawnFood, 1500);
+  };
+
+  // Stop game function
+  const stopGame = () => {
+    clearInterval(timerIntervalRef.current);
+    clearInterval(gameIntervalRef.current);
+    setGameActive(false);
+  };
+
+  // Spawn a new food item at random position
+  const spawnFood = () => {
+    if (!gameAreaRef.current) return;
+    
+    const gameArea = gameAreaRef.current.getBoundingClientRect();
+    const randomFood = foodItems[Math.floor(Math.random() * foodItems.length)];
+    const id = Date.now();
+    
+    const maxX = gameArea.width - 60; // 60px is the food item size
+    const maxY = gameArea.height - 60;
+    
+    const newFood = {
+      ...randomFood,
+      id,
+      x: Math.floor(Math.random() * maxX),
+      y: Math.floor(Math.random() * maxY),
+      rotation: Math.floor(Math.random() * 360)
+    };
+    
+    setFoods(prevFoods => [...prevFoods, newFood]);
+    
+    // Remove food after 3 seconds if not clicked
+    setTimeout(() => {
+      setFoods(prevFoods => prevFoods.filter(food => food.id !== id));
+    }, 3000);
+  };
+
+  // Handle food click
+  const handleFoodClick = (food) => {
+    // Remove the clicked food
+    setFoods(prevFoods => prevFoods.filter(f => f.id !== food.id));
+    
+    if (food.isHealthy) {
+      // Increase score for healthy food
+      setScore(prevScore => prevScore + 10);
+    } else {
+      // Show Ramsay quote for unhealthy food
+      const randomQuote = ramsayQuotes[Math.floor(Math.random() * ramsayQuotes.length)];
+      setCurrentQuote(randomQuote);
+      setShowQuote(true);
+      
+      // Hide quote after 2 seconds
+      setTimeout(() => {
+        setShowQuote(false);
+      }, 2000);
+    }
+  };
+
+  // Clean up on component unmount
+  useEffect(() => {
+    return () => {
+      clearInterval(timerIntervalRef.current);
+      clearInterval(gameIntervalRef.current);
+    };
+  }, []);
+
+  return (
+    <div className="landing-page">
+      <div className="container">
+        <div className="hero-section">
+          <div className="hero-content">
+            <h1>Welcome to Hell's Kitchen</h1>
+            <p>A Gordon Ramsay-inspired fitness & nutrition app that's as brutal as it is effective!</p>
+            <div className="hero-buttons">
+              <Link to="/profile" className="btn btn-primary">Create Your Profile</Link>
+              <Link to="/recipe-extractor" className="btn btn-secondary">Explore Recipes</Link>
+            </div>
+          </div>
+        </div>
+        
+        <div className="game-section">
+          <div className="game-header">
+            <h2>Food Ninja Challenge</h2>
+            <p>Click on the healthy foods. Avoid the junk food or face Chef Ramsay's wrath!</p>
+          </div>
+          
+          <div className="game-controls">
+            {!gameActive ? (
+              <button onClick={startGame} className="btn btn-primary">Start Game</button>
+            ) : (
+              <button onClick={stopGame} className="btn btn-secondary">End Game</button>
+            )}
+            <div className="game-stats">
+              <div className="stat">
+                <span>Score:</span> 
+                <span className="stat-value">{score}</span>
+              </div>
+              <div className="stat">
+                <span>Time Left:</span> 
+                <span className="stat-value">{timeLeft}s</span>
+              </div>
+            </div>
+          </div>
+          
+          <div className="game-area" ref={gameAreaRef}>
+            {foods.map(food => (
+              <div
+                key={food.id}
+                className="food-item"
+                style={{
+                  left: `${food.x}px`,
+                  top: `${food.y}px`,
+                  transform: `rotate(${food.rotation}deg)`
+                }}
+                onClick={() => handleFoodClick(food)}
+              >
+                <span>{food.name}</span>
+              </div>
+            ))}
+            
+            {!gameActive && !timeLeft && (
+              <div className="game-over">
+                <h3>Game Over!</h3>
+                <p>Your score: {score}</p>
+                <button onClick={startGame} className="btn btn-primary">Play Again</button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+      
+      {/* API Status indicator */}
+      <div className="api-status">
+        <h4>API Status</h4>
+        <div className="status-indicator">
+          <div className={`status-dot ${apiStatus.openai === 'Connected' ? 'connected' : 'disconnected'}`}></div>
+          <span>OpenAI API: {apiStatus.openai}</span>
+        </div>
+        <div className="status-indicator">
+          <div className={`status-dot ${apiStatus.youtube === 'Connected' ? 'connected' : 'disconnected'}`}></div>
+          <span>YouTube API: {apiStatus.youtube}</span>
+        </div>
+      </div>
+      
+      {/* Gordon Ramsay quote popup */}
+      {showQuote && (
+        <>
+          <div className="overlay"></div>
+          <div className="ramsay-quote-popup">
+            "{currentQuote}"
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
+export default LandingPage;
