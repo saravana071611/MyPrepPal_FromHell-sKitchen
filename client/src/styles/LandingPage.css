@@ -123,8 +123,8 @@
 
 .food-item {
   position: absolute;
-  width: 60px;
-  height: 60px;
+  width: 80px;
+  height: 80px;
   background-color: var(--gray-element);
   border-radius: 50%;
   display: flex;
@@ -140,13 +140,13 @@
 }
 
 .food-item span {
-  font-size: 2rem;
+  font-size: 2.5rem;
   text-align: center;
 }
 
 /* Adding specific emoji styling */
 .food-item span[role="img"] {
-  font-size: 2.5rem;
+  font-size: 3.5rem;
   line-height: 1;
 }
 

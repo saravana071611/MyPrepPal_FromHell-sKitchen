@@ -80,10 +80,10 @@ const LandingPage = ({ apiStatus, refreshApiStatus }) => {
     // Start spawning foods
     startFoodSpawning();
     
-    // Set up difficulty progression
+    // Set up difficulty progression - increase difficulty faster
     difficultyTimerRef.current = setInterval(() => {
       setDifficulty(prev => Math.min(prev + 1, 5));
-    }, 12000); // Increase difficulty every 12 seconds
+    }, 6000); // Increase difficulty every 6 seconds (changed from 12 seconds)
   };
 
   // Start timer function
@@ -105,8 +105,8 @@ const LandingPage = ({ apiStatus, refreshApiStatus }) => {
   // Start food spawning function
   const startFoodSpawning = () => {
     clearInterval(gameIntervalRef.current);
-    // Spawn interval decreases as difficulty increases
-    const spawnInterval = Math.max(800 - (difficulty * 100), 300);
+    // Spawn interval decreases as difficulty increases - made faster overall
+    const spawnInterval = Math.max(600 - (difficulty * 100), 200);
     gameIntervalRef.current = setInterval(spawnFood, spawnInterval);
   };
 
@@ -148,8 +148,8 @@ const LandingPage = ({ apiStatus, refreshApiStatus }) => {
       const randomFood = foodItems[Math.floor(Math.random() * foodItems.length)];
       const id = Date.now() + i; // Ensure unique ID
       
-      const maxX = gameArea.width - 60; // 60px is the food item size
-      const maxY = gameArea.height - 60;
+      const maxX = gameArea.width - 80; // 80px is the food item size (updated from 60px)
+      const maxY = gameArea.height - 80;
       
       const newFood = {
         ...randomFood,
