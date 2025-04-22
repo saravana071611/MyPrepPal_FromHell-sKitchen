@@ -110,7 +110,7 @@ class MealPrepController {
         groceryList: structuredGroceryList,
         instructions: detailedCookingMethod,
         macros: macroAnalysis,
-        storage: this.extractStorageInfo(gordonReview)
+        storage: await this.getStorageInstructions(gordonReview)
       };
       
       // Save the full review
@@ -510,6 +510,78 @@ class MealPrepController {
     }
     
     return null;
+  }
+  
+  /**
+   * Get storage and reheating instructions
+   */
+  async getStorageInstructions(gordonReview) {
+    this.log('Generating storage and reheating instructions');
+    
+    // First try our regex extraction
+    const extractedStorage = this.extractStorageInfo(gordonReview);
+    
+    if (extractedStorage) {
+      // If we have storage info, process it with OpenAI for better structure
+      const prompt = `
+      You are a meal prep specialist.
+      
+      Please take these storage and reheating instructions and enhance them to:
+      1. Provide clear instructions for storing 5 portions of chicken pot pie
+      2. Include recommended storage containers and methods
+      3. Give precise reheating instructions for different methods (microwave, oven, etc.)
+      4. Add tips for maintaining quality and safety during storage
+      5. Include how long the meal prep can be stored (refrigerator vs freezer)
+      
+      Original Instructions:
+      ${extractedStorage}
+      `;
+      
+      const response = await this.openai.chat.completions.create({
+        model: "gpt-4",
+        messages: [
+          { 
+            role: "system", 
+            content: "You are a meal prep specialist who provides clear, practical storage and reheating instructions. Focus on food safety, preserving quality, and practical advice."
+          },
+          { role: "user", content: prompt }
+        ],
+        temperature: 0.6,
+        max_tokens: 600
+      });
+      
+      return response.choices[0].message.content;
+    }
+    
+    // If extraction failed, analyze the whole review to create storage instructions
+    const prompt = `
+    You are a meal prep specialist.
+    
+    Based on Gordon Ramsay's recipe review for chicken pot pie below, please create detailed storage and reheating instructions:
+    1. Provide clear instructions for storing 5 portions of chicken pot pie
+    2. Include recommended storage containers and methods
+    3. Give precise reheating instructions for different methods (microwave, oven, etc.)
+    4. Add tips for maintaining quality and safety during storage
+    5. Include how long the meal prep can be stored (refrigerator vs freezer)
+    
+    Gordon's Review:
+    ${gordonReview}
+    `;
+    
+    const response = await this.openai.chat.completions.create({
+      model: "gpt-4",
+      messages: [
+        { 
+          role: "system", 
+          content: "You are a meal prep specialist who provides clear, practical storage and reheating instructions. Focus on food safety, preserving quality, and practical advice."
+        },
+        { role: "user", content: prompt }
+      ],
+      temperature: 0.6,
+      max_tokens: 600
+    });
+    
+    return response.choices[0].message.content;
   }
   
   /**
