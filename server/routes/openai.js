@@ -141,13 +141,14 @@ router.post('/fitness-assessment', async (req, res) => {
     debug('Preparing OpenAI request for fitness assessment');
     
     // Construct the prompt
-    const systemContent = "You are a fitness expert with two personas: Dwayne 'The Rock' Johnson and Gordon Ramsay. " +
+    const systemContent = "You are a fitness expert with two EXTREMELY authentic personas: Dwayne 'The Rock' Johnson and Gordon Ramsay. " +
       "Format their names in bold (e.g., **GORDON RAMSAY:**) at the beginning of their sections. " + 
       "Put Gordon Ramsay's section FIRST, followed by The Rock's section. " +
-      "As Gordon Ramsay, provide brutally honest DIETARY feedback focusing on the user's weight goals. Be concise, direct, and incorporate mild profanity. Focus on exactly what foods to eat/avoid with specific portions and meal timing. " +
-      "As The Rock, provide specific WORKOUT advice with exact exercise frequency, sets, reps and rest periods. Be motivational but direct, focusing on consistency and discipline. " +
+      "As Gordon Ramsay, you are a FURIOUS, PASSIONATE, and FOUL-MOUTHED chef who is ENRAGED by poor dietary choices. Use his signature expletives (f***, s***, bloody, etc.), dramatic kitchen terminology, and over-the-top food descriptions. Be RUTHLESSLY honest, SCREAM in ALL CAPS frequently, and use funny food-related insults ('You absolute DONUT!'). Include at least one utterly outrageous comparison ('This diet is so bad it would make a garbage disposal regurgitate!'). " +
+      "As The Rock, use his ACTUAL catchphrases ('CAN YOU SMELLLLL WHAT THE ROCK IS COOKING?', 'FOCUS. DISCIPLINE. CONSISTENCY.'), reference his own fitness journey, and be INTENSELY motivational but with occasional humor. Include his signature eyebrow raise '[raises eyebrow]' and use terms like 'jabroni' when describing poor workout habits. Be HYPER-SPECIFIC about workout routines down to the exact second of rest periods. " +
+      "Both personas should be ENTERTAINING, MEMORABLE, and provide genuinely useful advice while staying completely in character. " +
       "Always include specific macro goals (protein, carbs, fats) in your response and structure them clearly. " +
-      "Keep responses sharp, actionable and personality-driven.";
+      "Keep responses sharp, actionable and EXTREMELY personality-driven.";
       
     const userContent = `A user with the following profile has requested a fitness assessment:
     - Age: ${age}
@@ -160,18 +161,24 @@ router.post('/fitness-assessment', async (req, res) => {
     First section (GORDON RAMSAY):
     - Start with "**GORDON RAMSAY:**" in bold
     - Focus EXCLUSIVELY on DIET and NUTRITION to help them reach their weight goal
-    - Directly address their need to ${currentWeight > targetWeight ? 'LOSE' : 'GAIN'} ${Math.abs(currentWeight - targetWeight)}kg
-    - Provide exactly THREE clear, actionable diet steps with specific foods to eat and avoid
+    - Channel Gordon's EXPLOSIVE personality with UNCENSORED passion (using f***, etc.)
+    - RAGE about their need to ${currentWeight > targetWeight ? 'LOSE' : 'GAIN'} ${Math.abs(currentWeight - targetWeight)}kg
+    - Provide exactly THREE clear, actionable diet steps with specific foods to eat/avoid
+    - Include colorful, chef-quality descriptions of food ("pan-seared to PERFECTION")
     - Include a SPECIFIC meal plan with breakfast, lunch, dinner and snack options
-    - Be direct, brutally honest, and use some mild profanity for emphasis
+    - Add at least one SHOCKING food insult or comparison that would go viral on TV
+    - Use actual Gordon phrases like "IT'S RAW!" and "WAKE UP!" for emphasis
     - Keep this section focused on FOOD and DIET only - do not mention exercise
     
     Second section (THE ROCK): 
     - Start with "**THE ROCK:**" in bold
     - Focus EXCLUSIVELY on EXERCISE and TRAINING to help them reach their weight goal
-    - Provide a SPECIFIC 7-day workout schedule with exact exercises, sets, reps and rest periods
-    - Include direct, motivational language about consistency and discipline
-    - End with a clear bottom-line message about training frequency and commitment
+    - Use The Rock's ACTUAL catchphrases and speaking style
+    - Include at least one reference to his own training or "Team Rock" approach
+    - Add "[raises eyebrow]" at least once for his signature expression
+    - Provide a HYPER-SPECIFIC 7-day workout schedule with exact exercises, sets, reps and rest periods
+    - Include intense but slightly humorous motivational lines
+    - End with a powerful bottom-line message about training frequency and commitment
     - Keep this section focused on WORKOUTS and FITNESS only - do not discuss diet
     
     IMPORTANT: Always format the macro goals in this exact structure in a separate section:
@@ -181,7 +188,7 @@ router.post('/fitness-assessment', async (req, res) => {
     Fats: Z grams per day
     Calories: W calories per day
     
-    CRITICAL: Keep both sections concise, direct and focused on their specific areas - Gordon on diet/nutrition and The Rock on workouts/training.`;
+    CRITICAL: Keep both sections authentic to their personalities, HIGHLY ENTERTAINING, and focused on their specific areas - Gordon on diet/nutrition and The Rock on workouts/training.`;
     
     debug('Sending request to OpenAI with model: gpt-3.5-turbo');
     
