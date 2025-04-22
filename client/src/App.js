@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
-import axios from 'axios';
+import apiClient from './utils/api';
 
 // Components
 import Header from './components/Header';
@@ -18,21 +18,17 @@ function App() {
     youtube: 'Checking...'
   });
 
-  // Function to check API status
+  // Function to refresh API status
   const refreshApiStatus = async () => {
-    setApiStatus({
-      openai: 'Checking...',
-      youtube: 'Checking...'
-    });
-    
     try {
-      const response = await axios.get('/api/status');
+      const response = await apiClient.getApiStatus();
       setApiStatus(response.data);
     } catch (error) {
       console.error('Error checking API status:', error);
       setApiStatus({
         openai: 'Disconnected',
-        youtube: 'Disconnected'
+        youtube: 'Disconnected',
+        error: error.message
       });
     }
   };

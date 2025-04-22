@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import apiClient from '../utils/api';
 import '../styles/UserProfilePage.css';
 
 const UserProfilePage = () => {
@@ -99,7 +99,7 @@ const UserProfilePage = () => {
       console.log('Submitting profile data:', { userId, ...formData });
       
       // First, save user profile
-      const profileResponse = await axios.post('/api/user/profile', {
+      const profileResponse = await apiClient.saveUserProfile({
         userId,
         ...formData
       });
@@ -110,7 +110,7 @@ const UserProfilePage = () => {
       localStorage.setItem('userId', userId);
       
       // Then, get AI assessment
-      const assessmentResponse = await axios.post('/api/openai/fitness-assessment', {
+      const assessmentResponse = await apiClient.getFitnessAssessment({
         userId, // Pass userId to update profile with macro goals
         ...formData
       });
@@ -133,6 +133,9 @@ const UserProfilePage = () => {
         // The request was made but no response was received
         console.error('No response received:', error.request);
         setError('Failed to submit profile: No response from server. Please check your connection.');
+      } else if (error.code === 'ECONNRESET') {
+        // Handle connection reset errors
+        setError('The connection to the server was reset. This might be due to a timeout. Please try again.');
       } else {
         // Something happened in setting up the request that triggered an Error
         console.error('Error message:', error.message);

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { useParams } from 'react-router-dom';
+import apiClient from '../utils/api';
 import '../styles/RecipeExtractorPage.css';
 
 const RecipeExtractorPage = () => {
@@ -12,26 +13,18 @@ const RecipeExtractorPage = () => {
   const [error, setError] = useState('');
   const [step, setStep] = useState(1);
 
-  // Load user profile on component mount
-  useEffect(() => {
-    const loadUserProfile = async () => {
-      try {
-        // Get the latest user profile (in a real app, we'd have proper user auth)
-        // For now, we'll just look for any profile in localStorage
-        const userId = localStorage.getItem('userId');
-        
-        if (userId) {
-          const response = await axios.get(`/api/user/profile/${userId}`);
-          setUserProfile(response.data);
-        }
-      } catch (error) {
-        console.error('Error loading user profile:', error);
-        // Not a critical error, so we don't set the error state
-      }
-    };
+  // Load user profile if available
+  const loadUserProfile = async () => {
+    if (!userId) return;
     
-    loadUserProfile();
-  }, []);
+    try {
+      const response = await apiClient.getUserProfile(userId);
+      setUserProfile(response.data);
+    } catch (error) {
+      console.error('Error loading user profile:', error);
+      // Continue without profile
+    }
+  };
 
   // Handle video URL input
   const handleVideoUrlChange = (e) => {
@@ -44,36 +37,42 @@ const RecipeExtractorPage = () => {
     setError('');
     
     try {
-      const response = await axios.get(`/api/youtube/video-info?videoUrl=${encodeURIComponent(videoUrl)}`);
+      const response = await apiClient.getVideoInfo(videoUrl);
       setVideoInfo(response.data);
       setStep(2);
     } catch (error) {
       console.error('Error fetching video info:', error);
-      setError('Failed to fetch video info. Please check the URL and try again.');
+      setError('Failed to fetch video information. Please check the URL and try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  // Extract audio and get transcript
+  // Extract audio and transcribe
   const extractAudioAndTranscribe = async () => {
     setLoading(true);
     setError('');
     
     try {
-      // Step 1: Extract audio from YouTube video
-      const extractResponse = await axios.post('/api/youtube/extract-audio', { videoUrl });
+      // Step 1: Extract audio
+      const extractResponse = await apiClient.extractAudio(videoUrl);
       
-      // Step 2: Transcribe the audio with OpenAI Whisper
-      const transcribeResponse = await axios.post('/api/openai/transcribe', { 
-        audioFilePath: extractResponse.data.audioFilePath 
+      // Step 2: Transcribe audio
+      const transcribeResponse = await apiClient.transcribeAudio({
+        audioFilePath: extractResponse.data.audioFilePath
       });
       
       setTranscript(transcribeResponse.data.transcript);
       setStep(3);
     } catch (error) {
-      console.error('Error extracting and transcribing audio:', error);
-      setError('Failed to extract and transcribe the video. Please try again.');
+      console.error('Error in audio extraction or transcription:', error);
+      let errorMessage = 'Failed to process video. Please try again or choose a different video.';
+      
+      if (error.response && error.response.data && error.response.data.error) {
+        errorMessage = `Error: ${error.response.data.error}`;
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -98,7 +97,7 @@ const RecipeExtractorPage = () => {
         `;
       }
       
-      const response = await axios.post('/api/openai/recipe-analysis', {
+      const response = await apiClient.getRecipeAnalysis({
         transcript,
         macroGoals
       });
@@ -107,7 +106,21 @@ const RecipeExtractorPage = () => {
       setStep(4);
     } catch (error) {
       console.error('Error getting recipe analysis:', error);
-      setError('Failed to analyze the recipe. Please try again.');
+      
+      let errorMessage = 'Failed to analyze the recipe. Please try again.';
+      
+      if (error.response && error.response.data && error.response.data.error) {
+        errorMessage = `Error: ${error.response.data.error}`;
+        
+        // Special handling for OpenAI API errors
+        if (error.response.data.details && error.response.data.details.includes('OpenAI API error')) {
+          errorMessage += ' The AI service is currently experiencing issues. Please try again later.';
+        }
+      } else if (error.code === 'ECONNRESET') {
+        errorMessage = 'The connection to the server was reset. This might be due to a timeout. Please try again with a shorter video.';
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
