@@ -39,26 +39,26 @@ const LandingPage = ({ apiStatus, refreshApiStatus }) => {
 
   // Foods for the game (healthy and unhealthy)
   const foodItems = [
-    { name: 'Apple', image: 'apple.png', isHealthy: true },
-    { name: 'Broccoli', image: 'broccoli.png', isHealthy: true },
-    { name: 'Carrot', image: 'carrot.png', isHealthy: true },
-    { name: 'Spinach', image: 'spinach.png', isHealthy: true },
-    { name: 'Chicken', image: 'chicken.png', isHealthy: true },
-    { name: 'Fish', image: 'fish.png', isHealthy: true },
-    { name: 'Eggs', image: 'eggs.png', isHealthy: true },
-    { name: 'Nuts', image: 'nuts.png', isHealthy: true },
-    { name: 'Avocado', image: 'avocado.png', isHealthy: true },
-    { name: 'Berries', image: 'berries.png', isHealthy: true },
-    { name: 'Burger', image: 'burger.png', isHealthy: false },
-    { name: 'Pizza', image: 'pizza.png', isHealthy: false },
-    { name: 'Fries', image: 'fries.png', isHealthy: false },
-    { name: 'Donut', image: 'donut.png', isHealthy: false },
-    { name: 'Cake', image: 'cake.png', isHealthy: false },
-    { name: 'Ice Cream', image: 'ice-cream.png', isHealthy: false },
-    { name: 'Soda', image: 'soda.png', isHealthy: false },
-    { name: 'Candy', image: 'candy.png', isHealthy: false },
-    { name: 'Hot Dog', image: 'hot-dog.png', isHealthy: false },
-    { name: 'Chips', image: 'chips.png', isHealthy: false }
+    { name: 'Apple', emoji: '🍎', image: 'apple.png', isHealthy: true },
+    { name: 'Broccoli', emoji: '🥦', image: 'broccoli.png', isHealthy: true },
+    { name: 'Carrot', emoji: '🥕', image: 'carrot.png', isHealthy: true },
+    { name: 'Spinach', emoji: '🥬', image: 'spinach.png', isHealthy: true },
+    { name: 'Chicken', emoji: '🍗', image: 'chicken.png', isHealthy: true },
+    { name: 'Fish', emoji: '🐟', image: 'fish.png', isHealthy: true },
+    { name: 'Eggs', emoji: '🥚', image: 'eggs.png', isHealthy: true },
+    { name: 'Nuts', emoji: '🥜', image: 'nuts.png', isHealthy: true },
+    { name: 'Avocado', emoji: '🥑', image: 'avocado.png', isHealthy: true },
+    { name: 'Berries', emoji: '🫐', image: 'berries.png', isHealthy: true },
+    { name: 'Burger', emoji: '🍔', image: 'burger.png', isHealthy: false },
+    { name: 'Pizza', emoji: '🍕', image: 'pizza.png', isHealthy: false },
+    { name: 'Fries', emoji: '🍟', image: 'fries.png', isHealthy: false },
+    { name: 'Donut', emoji: '🍩', image: 'donut.png', isHealthy: false },
+    { name: 'Cake', emoji: '🍰', image: 'cake.png', isHealthy: false },
+    { name: 'Ice Cream', emoji: '🍦', image: 'ice-cream.png', isHealthy: false },
+    { name: 'Soda', emoji: '🥤', image: 'soda.png', isHealthy: false },
+    { name: 'Candy', emoji: '🍬', image: 'candy.png', isHealthy: false },
+    { name: 'Hot Dog', emoji: '🌭', image: 'hot-dog.png', isHealthy: false },
+    { name: 'Chips', emoji: '🍪', image: 'chips.png', isHealthy: false }
   ];
 
   // Start game function
@@ -198,7 +198,7 @@ const LandingPage = ({ apiStatus, refreshApiStatus }) => {
                 }}
                 onClick={() => handleFoodClick(food)}
               >
-                <span>{food.name}</span>
+                <span role="img" aria-label={food.name}>{food.emoji}</span>
               </div>
             ))}
             
