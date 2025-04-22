@@ -2,23 +2,34 @@ const express = require('express');
 const router = express.Router();
 const { OpenAI } = require('openai');
 const fs = require('fs');
+const path = require('path');
+
+// Directory to store user profiles
+const PROFILES_DIR = path.join(__dirname, '../data/profiles');
 
 // OpenAI Configuration
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// Route to get AI fitness assessment (The Rock persona)
+// Route to get AI fitness assessment (combined Rock and Ramsay personas)
 router.post('/fitness-assessment', async (req, res) => {
   try {
-    const { age, gender, currentWeight, currentHeight, activityLevel, targetWeight } = req.body;
+    const { userId, age, gender, currentWeight, currentHeight, activityLevel, targetWeight } = req.body;
+    
+    if (!userId) {
+      return res.status(400).json({ error: 'User ID is required for fitness assessment' });
+    }
     
     const response = await openai.chat.completions.create({
       model: "gpt-4",
       messages: [
         {
           role: "system",
-          content: "You are Dwayne 'The Rock' Johnson, a fitness expert and motivational figure. You provide personalized fitness advice in a motivational tone."
+          content: "You are a fitness expert with two personas: Dwayne 'The Rock' Johnson and Gordon Ramsay. " +
+            "As The Rock, you provide motivational fitness advice. " + 
+            "As Gordon Ramsay, you provide brutally honest dietary feedback with mild profanity. " +
+            "Always include specific macro goals (protein, carbs, fats) in your response and structure them clearly."
         },
         {
           role: "user",
@@ -30,21 +41,82 @@ router.post('/fitness-assessment', async (req, res) => {
           - Activity Level: ${activityLevel}
           - Target Weight: ${targetWeight}kg
           
-          First, provide a brief 2-3 line motivational assessment of their current status.
-          Then, calculate and recommend appropriate daily macronutrient goals (protein, carbs, fats) based on their profile. 
-          Explain the rationale behind these recommendations using your fitness expertise and motivational tone.`
+          First part (as The Rock): 
+          - Provide a brief 2-3 line motivational assessment of their current status.
+          - Calculate and recommend appropriate daily macronutrient goals (protein, carbs, fats) based on their profile.
+          - Explain the rationale behind these recommendations using your fitness expertise and motivational tone.
+          
+          Second part (as Gordon Ramsay):
+          - Give a brutally honest assessment of their current diet based on their stats.
+          - Provide advice on what foods they should eat or avoid.
+          - Suggest a simple meal plan that aligns with the macro goals.
+          
+          IMPORTANT: Always format the macro goals in this exact structure at the end of your response:
+          MACRO_GOALS:
+          Protein: X grams per day
+          Carbs: Y grams per day
+          Fats: Z grams per day
+          Calories: W calories per day`
         }
       ],
-      max_tokens: 500,
+      max_tokens: 800,
       temperature: 0.7,
     });
 
+    const fullAssessment = response.choices[0].message.content.trim();
+    
+    // Extract the macro goals from the response
+    let macroGoals = {};
+    const macroSection = fullAssessment.split('MACRO_GOALS:');
+    
+    if (macroSection.length > 1) {
+      const macroText = macroSection[1].trim();
+      const macroLines = macroText.split('\n');
+      
+      macroLines.forEach(line => {
+        if (line.includes('Protein:')) {
+          macroGoals.protein = line.split('Protein:')[1].trim().split(' ')[0];
+        } else if (line.includes('Carbs:')) {
+          macroGoals.carbs = line.split('Carbs:')[1].trim().split(' ')[0];
+        } else if (line.includes('Fats:')) {
+          macroGoals.fats = line.split('Fats:')[1].trim().split(' ')[0];
+        } else if (line.includes('Calories:')) {
+          macroGoals.calories = line.split('Calories:')[1].trim().split(' ')[0];
+        }
+      });
+    }
+    
+    // Store the macro goals in the user profile
+    try {
+      const filePath = path.join(PROFILES_DIR, `${userId}.json`);
+      
+      if (fs.existsSync(filePath)) {
+        const userProfileRaw = fs.readFileSync(filePath, 'utf8');
+        const userProfile = JSON.parse(userProfileRaw);
+        
+        // Update profile with macro goals
+        userProfile.macroGoals = macroGoals;
+        userProfile.updatedAt = new Date().toISOString();
+        
+        fs.writeFileSync(filePath, JSON.stringify(userProfile, null, 2));
+        console.log('User profile updated with macro goals');
+      } else {
+        console.error('User profile not found for storing macro goals');
+      }
+    } catch (error) {
+      console.error('Error updating user profile with macro goals:', error);
+    }
+
     res.json({ 
-      assessment: response.choices[0].message.content.trim() 
+      assessment: fullAssessment,
+      macroGoals: macroGoals
     });
   } catch (error) {
     console.error('Error with OpenAI API:', error);
-    res.status(500).json({ error: 'Failed to generate fitness assessment' });
+    res.status(500).json({ 
+      error: 'Failed to generate fitness assessment',
+      details: error.message 
+    });
   }
 });
 

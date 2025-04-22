@@ -6,10 +6,42 @@ const path = require('path');
 // Directory to store user profiles
 const PROFILES_DIR = path.join(__dirname, '../data/profiles');
 
+// Function to clear all profiles - used on server start
+const clearAllProfiles = () => {
+  try {
+    if (fs.existsSync(PROFILES_DIR)) {
+      const files = fs.readdirSync(PROFILES_DIR);
+      for (const file of files) {
+        fs.unlinkSync(path.join(PROFILES_DIR, file));
+      }
+      console.log('All user profiles cleared on server start');
+    }
+  } catch (error) {
+    console.error('Error clearing profiles directory:', error);
+  }
+};
+
+// Clear profiles on module load (server start)
+clearAllProfiles();
+
 // Ensure profiles directory exists
 if (!fs.existsSync(PROFILES_DIR)) {
   fs.mkdirSync(PROFILES_DIR, { recursive: true });
 }
+
+// Route to clear all profiles (for admin or testing purposes)
+router.delete('/profiles/clear', (req, res) => {
+  try {
+    clearAllProfiles();
+    res.json({ 
+      success: true, 
+      message: 'All user profiles cleared successfully'
+    });
+  } catch (error) {
+    console.error('Error clearing profiles:', error);
+    res.status(500).json({ error: 'Failed to clear profiles' });
+  }
+});
 
 // Route to save user profile
 router.post('/profile', (req, res) => {
