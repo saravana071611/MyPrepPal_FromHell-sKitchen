@@ -77,29 +77,49 @@ router.post('/fitness-assessment', async (req, res) => {
       // Gordon Ramsay's part (now first) - Focus on diet and weight
       mockAssessment += `**GORDON RAMSAY:**\n\n`;
       mockAssessment += `WAKE UP, YOU ${isWeightLoss ? 'OVERWEIGHT' : 'UNDERWEIGHT'} DISASTER! At ${currentWeight}kg with a BMI of ${bmi}, you need to ${isWeightLoss ? 'LOSE' : 'GAIN'} ${Math.abs(weightDiff)}kg! Your current diet is ABSOLUTELY PATHETIC!\n\n`;
+      mockAssessment += `Look at you - a ${age}-year-old ${gender} with a ${activityLevel} activity level trying to reach ${targetWeight}kg. BLOODY HELL! I've seen better nutrition plans written on a FAST FOOD WRAPPER! Your eating habits are DESTROYING your body, and at ${currentHeight}cm tall, you can't afford to keep this up!\n\n`;
+      mockAssessment += `I'M NOT FINISHED! Your metabolism is CRYING OUT FOR HELP! With every meal of processed garbage, you're sabotaging what could be a PERFECTLY GOOD body! It's time to WAKE UP and fix this DISASTER you call a diet!\n\n`;
+      
       mockAssessment += `FOOD COMMANDMENTS:\n\n`;
+      
       mockAssessment += `• CUT THE CRAP: No more processed foods - they're DESTROYING your ${age}-year-old body! With your ${activityLevel} activity level, this garbage is SABOTAGING you!\n\n`;
+      
       mockAssessment += `• PROTEIN IS YOUR SAVIOR: Lean meats, fish, eggs at EVERY meal. For someone ${currentHeight}cm tall, you need quality protein to maintain muscle while you ${isWeightLoss ? 'shed fat' : 'build mass'}!\n\n`;
+      
       mockAssessment += `• VEGETABLES ARE NON-NEGOTIABLE: Triple your vegetable intake NOW - green vegetables at EVERY meal or don't bother asking for my help again!\n\n`;
       
       mockAssessment += `MEAL PLAN:\n\n`;
+      
       mockAssessment += `• Breakfast: ${isWeightLoss ? "Egg white omelette with spinach and tomatoes" : "Whole eggs with avocado toast and smoked salmon"}\n\n`;
+      
       mockAssessment += `• Lunch: Grilled chicken breast, steamed broccoli, ${isWeightLoss ? "¼ cup brown rice" : "1 cup brown rice"}\n\n`;
+      
       mockAssessment += `• Dinner: Baked salmon, asparagus, ${isWeightLoss ? "small sweet potato" : "large sweet potato"}\n\n`;
+      
       mockAssessment += `• Snack: Greek yogurt with berries ${isWeightLoss ? "(MEASURE IT PRECISELY!)" : "and a handful of nuts"}\n\n`;
+      
       mockAssessment += `NOW GET COOKING AND STOP WASTING MY TIME!\n\n`;
       
       // The Rock's part - Focus on exercise frequency and concrete steps
       mockAssessment += `**THE ROCK:**\n\n`;
       mockAssessment += `CAN YOU SMELLLLL WHAT THE ROCK IS COOKING? [raises eyebrow] It's a workout plan to transform your ${gender}, ${age}-year-old, ${currentWeight}kg body! FOCUS. DISCIPLINE. CONSISTENCY.\n\n`;
+      mockAssessment += `Listen up! When I was grinding to make it in the WWE, then transitioning to Hollywood, I learned that the foundation of success is HARD WORK. At your height of ${currentHeight}cm, weighing ${currentWeight}kg, with a ${activityLevel} activity level, you've got a PERFECT opportunity to transform!\n\n`;
+      mockAssessment += `This isn't just any workout plan, jabroni. This is a SPECIFICALLY DESIGNED regimen for someone with YOUR exact body metrics. I've trained thousands of people, and when I see someone looking to ${isWeightLoss ? 'lose' : 'gain'} ${Math.abs(weightDiff)}kg, I know EXACTLY what they need!\n\n`;
       
       mockAssessment += `WEEKLY WORKOUT SCHEDULE:\n\n`;
+      
       mockAssessment += `• Monday - PUSH DAY: Chest/shoulders/triceps - 4×10 reps, 60sec rest\n\n`;
+      
       mockAssessment += `• Tuesday - CARDIO: 35min HIIT intervals (30sec work/30sec rest)\n\n`;
+      
       mockAssessment += `• Wednesday - PULL DAY: Back/biceps - 4×10 reps, 60sec rest\n\n`;
+      
       mockAssessment += `• Thursday - RECOVERY: 30min walk + 15min stretching\n\n`;
+      
       mockAssessment += `• Friday - LEG DAY: Squats/lunges/deadlifts - 4×10 reps, 75sec rest\n\n`;
+      
       mockAssessment += `• Saturday - CARDIO: 45min steady state + core work\n\n`;
+      
       mockAssessment += `• Sunday - REST DAY: Complete recovery (but meal prep for the week!)\n\n`;
       
       mockAssessment += `THE BOTTOM LINE: Given your ${activityLevel} lifestyle, you MUST train 5-6 days/week. Add weight or reps each week - PROGRESSIVE OVERLOAD! At ${currentHeight}cm tall with a goal weight of ${targetWeight}kg, consistency is your best friend. NO SHORTCUTS, NO EXCUSES - JUST RESULTS!\n\n`;
@@ -162,7 +182,16 @@ router.post('/fitness-assessment', async (req, res) => {
     const systemContent = "You are a fitness expert with two EXTREMELY authentic personas: Dwayne 'The Rock' Johnson and Gordon Ramsay. " +
       "Format their names in bold (e.g., **GORDON RAMSAY:**) at the beginning of their sections. " + 
       "Put Gordon Ramsay's section FIRST, followed by The Rock's section. " +
-      "IMPORTANT - FORMATTING: Format both sections IDENTICALLY with clear headers, bullet points for lists, consistent spacing, and colored text styling. Put main categories in ALL CAPS followed by a colon (e.g., 'MEAL PLAN:'), then list items with bullet points, and use consistent indentation. " +
+      "IMPORTANT - FORMATTING RULES: " +
+      "1. Start each persona with a DETAILED INTRODUCTION of at least 6-8 lines that directly addresses the user's stats and needs. " +
+      "2. Format all section titles in ALL CAPS followed by a colon (e.g., 'MEAL PLAN:'). " +
+      "3. Use CONSISTENT spacing - always put ONE blank line before and after each section title. " +
+      "4. For bullet points, use the standard bullet symbol '•' (not circles or other symbols). " +
+      "5. For EVERY bullet point: use ONE blank line before the bullet and ONE blank line after its content. " +
+      "6. Sub-bullet points should be properly indented using the same bullet symbol '•' (not circles or other symbols). " +
+      "7. Keep line lengths reasonable to prevent awkward wrapping in display. " +
+      "8. Maintain consistent indentation throughout the entire output. " +
+      "9. Apply the EXACT SAME formatting structure to both Gordon's and The Rock's sections. " +
       "As Gordon Ramsay, you are a FURIOUS, PASSIONATE, and FOUL-MOUTHED chef who is ENRAGED by poor dietary choices. Use his signature expletives (f***, s***, bloody, etc.), dramatic kitchen terminology, and over-the-top food descriptions. Be RUTHLESSLY honest, SCREAM in ALL CAPS frequently, and use funny food-related insults ('You absolute DONUT!'). Include at least one utterly outrageous comparison ('This diet is so bad it would make a garbage disposal regurgitate!'). " +
       "As The Rock, use his ACTUAL catchphrases ('CAN YOU SMELLLLL WHAT THE ROCK IS COOKING?', 'FOCUS. DISCIPLINE. CONSISTENCY.'), reference his own fitness journey, and be INTENSELY motivational but with occasional humor. Include his signature eyebrow raise '[raises eyebrow]' and use terms like 'jabroni' when describing poor workout habits. Be HYPER-SPECIFIC about workout routines down to the exact second of rest periods. " +
       "Both personas should be ENTERTAINING, MEMORABLE, and provide genuinely useful advice while staying completely in character. " +
@@ -180,11 +209,12 @@ router.post('/fitness-assessment', async (req, res) => {
     
     First section (GORDON RAMSAY):
     - Start with "**GORDON RAMSAY:**" in bold
+    - Begin with an EXTENDED INTRODUCTION (at least 6-8 lines) that passionately addresses their situation
     - Focus EXCLUSIVELY on DIET and NUTRITION to help them reach their weight goal
     - Channel Gordon's EXPLOSIVE personality with UNCENSORED passion (using f***, etc.)
     - RAGE about their need to ${currentWeight > targetWeight ? 'LOSE' : 'GAIN'} ${Math.abs(currentWeight - targetWeight)}kg
-    - Format all main categories in ALL CAPS followed by a colon (e.g., "MEAL PLAN:") exactly as in The Rock's section
-    - Use bulleted lists for all lists (meals, food items, etc.) exactly as in The Rock's section
+    - Format all main categories in ALL CAPS followed by a colon (e.g., "MEAL PLAN:") with ONE blank line before and after
+    - Use ONLY the standard bullet symbol "•" for ALL bullet points, with consistent spacing
     - EXPLAIN WHY each dietary recommendation is made specifically for this user's stats (BMI, age, activity level)
     - Provide THREE clear, actionable diet steps with specific foods to eat/avoid
     - Include colorful, chef-quality descriptions of food ("pan-seared to PERFECTION")
@@ -195,10 +225,13 @@ router.post('/fitness-assessment', async (req, res) => {
     
     Second section (THE ROCK): 
     - Start with "**THE ROCK:**" in bold
+    - Begin with an EXTENDED INTRODUCTION (at least 6-8 lines) that motivationally addresses their situation
     - Focus EXCLUSIVELY on EXERCISE and TRAINING to help them reach their weight goal
     - Use The Rock's ACTUAL catchphrases and speaking style
     - Include at least one reference to his own training or "Team Rock" approach
     - Add "[raises eyebrow]" at least once for his signature expression
+    - Format all main categories in ALL CAPS followed by a colon (e.g., "WORKOUT PLAN:") with ONE blank line before and after
+    - Use ONLY the standard bullet symbol "•" for ALL bullet points, with consistent spacing
     - EXPLAIN WHY each workout is tailored specifically to this user's body type, age, and goals
     - Make direct references to the user's stats (weight, height, activity level) to show personalization
     - Provide a HYPER-SPECIFIC 7-day workout schedule with exact exercises, sets, reps and rest periods
@@ -399,29 +432,49 @@ router.post('/fitness-assessment', async (req, res) => {
         // Gordon Ramsay's part (now first) - Focus on diet and weight
         fallbackAssessment += `**GORDON RAMSAY:**\n\n`;
         fallbackAssessment += `WAKE UP, YOU ${isWeightLoss ? 'OVERWEIGHT' : 'UNDERWEIGHT'} DISASTER! At ${currentWeight}kg with a BMI of ${bmi}, you need to ${isWeightLoss ? 'LOSE' : 'GAIN'} ${Math.abs(weightDiff)}kg! Your current diet is ABSOLUTELY PATHETIC!\n\n`;
+        fallbackAssessment += `Look at you - a ${age}-year-old ${gender} with a ${activityLevel} activity level trying to reach ${targetWeight}kg. BLOODY HELL! I've seen better nutrition plans written on a FAST FOOD WRAPPER! Your eating habits are DESTROYING your body, and at ${currentHeight}cm tall, you can't afford to keep this up!\n\n`;
+        fallbackAssessment += `I'M NOT FINISHED! Your metabolism is CRYING OUT FOR HELP! With every meal of processed garbage, you're sabotaging what could be a PERFECTLY GOOD body! It's time to WAKE UP and fix this DISASTER you call a diet!\n\n`;
+        
         fallbackAssessment += `FOOD COMMANDMENTS:\n\n`;
+        
         fallbackAssessment += `• CUT THE CRAP: No more processed foods - they're DESTROYING your ${age}-year-old body! With your ${activityLevel} activity level, this garbage is SABOTAGING you!\n\n`;
+        
         fallbackAssessment += `• PROTEIN IS YOUR SAVIOR: Lean meats, fish, eggs at EVERY meal. For someone ${currentHeight}cm tall, you need quality protein to maintain muscle while you ${isWeightLoss ? 'shed fat' : 'build mass'}!\n\n`;
+        
         fallbackAssessment += `• VEGETABLES ARE NON-NEGOTIABLE: Triple your vegetable intake NOW - green vegetables at EVERY meal or don't bother asking for my help again!\n\n`;
         
         fallbackAssessment += `MEAL PLAN:\n\n`;
+        
         fallbackAssessment += `• Breakfast: ${isWeightLoss ? "Egg white omelette with spinach and tomatoes" : "Whole eggs with avocado toast and smoked salmon"}\n\n`;
+        
         fallbackAssessment += `• Lunch: Grilled chicken breast, steamed broccoli, ${isWeightLoss ? "¼ cup brown rice" : "1 cup brown rice"}\n\n`;
+        
         fallbackAssessment += `• Dinner: Baked salmon, asparagus, ${isWeightLoss ? "small sweet potato" : "large sweet potato"}\n\n`;
+        
         fallbackAssessment += `• Snack: Greek yogurt with berries ${isWeightLoss ? "(MEASURE IT PRECISELY!)" : "and a handful of nuts"}\n\n`;
+        
         fallbackAssessment += `NOW GET COOKING AND STOP WASTING MY TIME!\n\n`;
         
         // The Rock's part - Focus on exercise frequency and concrete steps
         fallbackAssessment += `**THE ROCK:**\n\n`;
         fallbackAssessment += `CAN YOU SMELLLLL WHAT THE ROCK IS COOKING? [raises eyebrow] It's a workout plan to transform your ${gender}, ${age}-year-old, ${currentWeight}kg body! FOCUS. DISCIPLINE. CONSISTENCY.\n\n`;
+        fallbackAssessment += `Listen up! When I was grinding to make it in the WWE, then transitioning to Hollywood, I learned that the foundation of success is HARD WORK. At your height of ${currentHeight}cm, weighing ${currentWeight}kg, with a ${activityLevel} activity level, you've got a PERFECT opportunity to transform!\n\n`;
+        fallbackAssessment += `This isn't just any workout plan, jabroni. This is a SPECIFICALLY DESIGNED regimen for someone with YOUR exact body metrics. I've trained thousands of people, and when I see someone looking to ${isWeightLoss ? 'lose' : 'gain'} ${Math.abs(weightDiff)}kg, I know EXACTLY what they need!\n\n`;
         
         fallbackAssessment += `WEEKLY WORKOUT SCHEDULE:\n\n`;
+        
         fallbackAssessment += `• Monday - PUSH DAY: Chest/shoulders/triceps - 4×10 reps, 60sec rest\n\n`;
+        
         fallbackAssessment += `• Tuesday - CARDIO: 35min HIIT intervals (30sec work/30sec rest)\n\n`;
+        
         fallbackAssessment += `• Wednesday - PULL DAY: Back/biceps - 4×10 reps, 60sec rest\n\n`;
+        
         fallbackAssessment += `• Thursday - RECOVERY: 30min walk + 15min stretching\n\n`;
+        
         fallbackAssessment += `• Friday - LEG DAY: Squats/lunges/deadlifts - 4×10 reps, 75sec rest\n\n`;
+        
         fallbackAssessment += `• Saturday - CARDIO: 45min steady state + core work\n\n`;
+        
         fallbackAssessment += `• Sunday - REST DAY: Complete recovery (but meal prep for the week!)\n\n`;
         
         fallbackAssessment += `THE BOTTOM LINE: Given your ${activityLevel} lifestyle, you MUST train 5-6 days/week. Add weight or reps each week - PROGRESSIVE OVERLOAD! At ${currentHeight}cm tall with a goal weight of ${targetWeight}kg, consistency is your best friend. NO SHORTCUTS, NO EXCUSES - JUST RESULTS!\n\n`;
