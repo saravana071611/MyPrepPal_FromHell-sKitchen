@@ -12,6 +12,14 @@ const formatTime = (seconds) => {
   return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
 };
 
+// Debug flag
+const DEBUG = true;
+const log = (...args) => {
+  if (DEBUG) {
+    console.log('[RecipeExtractor]', ...args);
+  }
+};
+
 // Processing status component to show timer and progress
 const ProcessingStatus = ({ 
   processingStage, 
@@ -24,7 +32,16 @@ const ProcessingStatus = ({
     'fetching': 'Fetching video data from YouTube...',
     'extracting': 'Extracting and processing the video transcript...',
     'analyzing': 'Analyzing recipe content with AI...',
-    'formatting': 'Formatting the recipe for display...'
+    'formatting': 'Formatting the recipe for display...',
+    'Preparing to extract audio': 'Setting up audio extraction process...',
+    'Fetching video information': 'Getting video details from YouTube...',
+    'Downloading audio from YouTube': 'Downloading audio stream from the video...',
+    'Processing audio file': 'Converting audio to the right format...',
+    'Audio extraction complete': 'Successfully extracted audio from video!',
+    'Starting transcription': 'Preparing to convert speech to text...',
+    'Transcribing audio': 'Converting speech to text using AI...',
+    'Finalizing transcription': 'Completing the transcription process...',
+    'Transcription complete': 'Successfully transcribed the audio to text!'
   };
 
   // Get the description or use a default message
@@ -212,8 +229,9 @@ const RecipeExtractorPage = () => {
 
   // Function to update processing stage
   const updateProcessingStage = (stage, percentComplete) => {
+    log('Stage update:', stage, 'Progress:', percentComplete);
     setProcessingStage(stage);
-    if (percentComplete) setProgressPercent(percentComplete);
+    if (percentComplete !== undefined) setProgressPercent(percentComplete);
   };
 
   // Function to stop the timer
@@ -331,77 +349,125 @@ const RecipeExtractorPage = () => {
     }
   };
 
-  // Set up socket connection and listeners
+  // Initialize socket.io connection when component mounts
   useEffect(() => {
-    // Connect to socket.io
-    socketService.connect();
+    // Connect to socket.io at component mount
+    log('Component mounted, initializing socket connection');
     
-    // Set up listener for audio extraction progress
-    const unsubscribeAudio = socketService.subscribeToAudioProgress((data) => {
-      console.log('Audio extraction progress:', data);
-      
-      if (data.stage === 'error') {
-        setError(data.message || 'Error during audio extraction');
-        stopProcessingTimer();
-        setLoading(false);
-        return;
-      }
-      
-      // Map socket progress stages to our UI stages
-      const stageMap = {
-        'initialized': { stage: 'Preparing to extract audio', percent: 0 },
-        'info': { stage: 'Fetching video information', percent: 10 },
-        'download': { stage: 'Downloading audio from YouTube', percent: data.progress || 20 },
-        'processing': { stage: 'Processing audio file', percent: data.progress || 80 },
-        'completed': { stage: 'Audio extraction complete', percent: 100 }
-      };
-      
-      const mappedStage = stageMap[data.stage] || { stage: data.message || 'Processing', percent: data.progress || 50 };
-      
-      // Update processing stage and progress
-      updateProcessingStage(mappedStage.stage, mappedStage.percent);
-      
-      // Audio extraction progress will be shown, but we won't automatically proceed to transcription
-      // The extractAudioAndTranscribe function will handle the API call for transcription
-    });
+    // Initialize socket connection
+    const socket = socketService.connect();
+    if (socket) {
+      log('Socket connection initialized');
+    } else {
+      console.error('[RecipeExtractor] Failed to initialize socket connection');
+    }
     
-    // Add listener for transcription progress updates
-    const unsubscribeTranscription = socketService.subscribeToTranscriptionProgress((data) => {
-      console.log('Transcription progress:', data);
+    // Clean up socket on component unmount
+    return () => {
+      log('Component unmounting, closing socket connection');
+      socketService.disconnect();
+    };
+  }, []);
+
+  // Set up socket event listeners
+  useEffect(() => {
+    log('Setting up socket event listeners');
+    
+    // Make sure socket is connected before subscribing
+    if (!socketService.isConnected()) {
+      log('Socket not connected, connecting now');
+      socketService.connect();
+    }
+    
+    // Use local variables to store the unsubscribe functions
+    let unsubscribeAudio = null;
+    let unsubscribeTranscription = null;
+    
+    try {
+      // Set up listener for audio extraction progress with error handling
+      unsubscribeAudio = socketService.subscribeToAudioProgress((data) => {
+        log('Received audio extraction progress update:', data);
+        
+        if (data.stage === 'error') {
+          setError(data.message || 'Error during audio extraction');
+          stopProcessingTimer();
+          setLoading(false);
+          return;
+        }
+        
+        // Map socket progress stages to our UI stages
+        const stageMap = {
+          'initialized': { stage: 'Preparing to extract audio', percent: 0 },
+          'info': { stage: 'Fetching video information', percent: 10 },
+          'download': { stage: 'Downloading audio from YouTube', percent: data.progress || 20 },
+          'processing': { stage: 'Processing audio file', percent: data.progress || 80 },
+          'completed': { stage: 'Audio extraction complete', percent: 100 }
+        };
+        
+        const mappedStage = stageMap[data.stage] || { stage: data.message || 'Processing', percent: data.progress || 50 };
+        
+        // Update processing stage and progress
+        log('Updating stage to:', mappedStage.stage, 'with progress:', mappedStage.percent);
+        updateProcessingStage(mappedStage.stage, mappedStage.percent);
+      });
       
-      if (data.stage === 'error') {
-        setError(data.message || 'Error during transcription');
-        stopProcessingTimer();
-        setLoading(false);
-        return;
-      }
-      
-      // Map socket progress stages to our UI stages
-      const stageMap = {
-        'initialized': { stage: 'Starting transcription', percent: 60 },
-        'processing': { stage: 'Transcribing audio', percent: data.progress || 70 },
-        'finalizing': { stage: 'Finalizing transcription', percent: 90 },
-        'completed': { stage: 'Transcription complete', percent: 100 }
-      };
-      
-      const mappedStage = stageMap[data.stage] || { stage: data.message || 'Processing transcription', percent: data.progress || 75 };
-      
-      // Update processing stage and progress
-      updateProcessingStage(mappedStage.stage, mappedStage.percent);
-      
-      // If transcription is complete, update the UI
-      if (data.stage === 'completed' && data.transcript) {
-        setTranscript(data.transcript);
-        setStep(3);
-        stopProcessingTimer(true);
-        setLoading(false);
-      }
-    });
+      // Add listener for transcription progress updates with error handling
+      unsubscribeTranscription = socketService.subscribeToTranscriptionProgress((data) => {
+        log('Received transcription progress update:', data);
+        
+        if (data.stage === 'error') {
+          setError(data.message || 'Error during transcription');
+          stopProcessingTimer();
+          setLoading(false);
+          return;
+        }
+        
+        // Map socket progress stages to our UI stages
+        const stageMap = {
+          'initialized': { stage: 'Starting transcription', percent: 60 },
+          'processing': { stage: 'Transcribing audio', percent: data.progress || 70 },
+          'finalizing': { stage: 'Finalizing transcription', percent: 90 },
+          'completed': { stage: 'Transcription complete', percent: 100 }
+        };
+        
+        const mappedStage = stageMap[data.stage] || { stage: data.message || 'Processing transcription', percent: data.progress || 75 };
+        
+        // Update processing stage and progress
+        log('Updating stage to:', mappedStage.stage, 'with progress:', mappedStage.percent);
+        updateProcessingStage(mappedStage.stage, mappedStage.percent);
+        
+        // If transcription is complete, update the UI
+        if (data.stage === 'completed' && data.transcript) {
+          setTranscript(data.transcript);
+          setStep(3);
+          stopProcessingTimer(true);
+          setLoading(false);
+        }
+      });
+    } catch (error) {
+      console.error('[RecipeExtractor] Error setting up socket event listeners:', error);
+    }
     
     // Clean up socket listeners on component unmount
     return () => {
-      unsubscribeAudio();
-      unsubscribeTranscription();
+      log('Cleaning up socket event listeners');
+      
+      // Safely call the unsubscribe functions if they exist
+      try {
+        if (typeof unsubscribeAudio === 'function') {
+          unsubscribeAudio();
+        }
+      } catch (error) {
+        console.error('[RecipeExtractor] Error unsubscribing from audio events:', error);
+      }
+      
+      try {
+        if (typeof unsubscribeTranscription === 'function') {
+          unsubscribeTranscription();
+        }
+      } catch (error) {
+        console.error('[RecipeExtractor] Error unsubscribing from transcription events:', error);
+      }
     };
   }, []);
 
@@ -410,6 +476,17 @@ const RecipeExtractorPage = () => {
     setLoading(true);
     setError('');
     
+    // First ensure socket connection is working
+    log('Testing socket connection before starting extraction process');
+    socketService.testConnection();
+    
+    // If socket is not connected, show a helpful error
+    if (!socketService.isConnected()) {
+      log('Socket not connected, showing error message');
+      setError('Could not establish a real-time connection to the server. Progress updates may not be visible. Please refresh the page and try again.');
+      // We'll continue anyway, but the user has been warned
+    }
+    
     // Estimate processing time based on video length
     // Rule of thumb: ~1.5x the video length is a reasonable estimate
     const videoLengthSecs = videoInfo?.length_seconds || 600; // Default to 10 min if unknown
@@ -417,13 +494,27 @@ const RecipeExtractorPage = () => {
     
     // Start timer with estimated time
     startProcessingTimer(estimatedProcessingTime, 'Preparing to extract audio');
+    updateProcessingStage('Initializing extraction process', 0);
     
     try {
+      // Short delay to allow UI to update before making the request
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // First make sure the progress indicator is immediately visible
+      updateProcessingStage('Connecting to server', 5);
+      
       // Kick off the audio extraction process - progress will be tracked via socket.io
+      log('Starting audio extraction for URL:', videoUrl);
       await apiClient.extractAudio(videoUrl);
       
+      // Update progress since we've successfully initiated the extraction
+      updateProcessingStage('Audio extraction in progress', 20);
+      log('Audio extraction initiated successfully');
+      
       // Start the transcription process
+      log('Starting transcription process');
       await apiClient.transcribeAudio({ videoUrl });
+      log('Transcription process initiated successfully');
       
       // The socket listeners will handle progress updates for both extraction and transcription
     } catch (error) {

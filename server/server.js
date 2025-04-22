@@ -77,13 +77,51 @@ const io = socketIo(server, {
   }
 });
 
+// Add debug logging to socket.io to trace connection issues
+const debug = {
+  socket: (message, ...args) => {
+    const timestamp = new Date().toISOString();
+    console.log(`[${timestamp}] [Socket] ${message}`, ...args);
+  }
+};
+
 // Socket.IO connection handler
 io.on('connection', (socket) => {
-  console.log('New client connected');
+  debug.socket('New client connected with ID:', socket.id);
+  
+  // Send a welcome message to confirm connection
+  socket.emit('connectionEstablished', { 
+    message: 'Connected to server socket.io',
+    socketId: socket.id 
+  });
+  
+  // Test socket.io connection with pings
+  const pingInterval = setInterval(() => {
+    socket.emit('ping', { timestamp: new Date().toISOString() });
+    debug.socket('Sent ping to client:', socket.id);
+  }, 30000); // Send ping every 30 seconds
+  
+  // Handle client-side pongs
+  socket.on('pong', (data) => {
+    debug.socket('Received pong from client:', socket.id, data);
+  });
   
   socket.on('disconnect', () => {
-    console.log('Client disconnected');
+    debug.socket('Client disconnected:', socket.id);
+    clearInterval(pingInterval);
   });
+
+  // Listen for socket connection test requests
+  socket.on('testConnection', () => {
+    debug.socket('Received test connection request from:', socket.id);
+    socket.emit('connectionTestResponse', { 
+      status: 'success',
+      message: 'Connection test successful',
+      timestamp: new Date().toISOString()
+    });
+  });
+  
+  // Add any other custom socket event handlers here
 });
 
 // Make io accessible to route handlers

@@ -10,6 +10,14 @@ const api = axios.create({
   }
 });
 
+// Debug flag
+const DEBUG = true;
+const log = (...args) => {
+  if (DEBUG) {
+    console.log('[API]', ...args);
+  }
+};
+
 // Determine if we should retry the request
 const shouldRetry = (error) => {
   // Retry on network errors or 5xx errors
@@ -44,7 +52,7 @@ api.interceptors.response.use(
     
     // If this is an ECONNRESET or network error and we haven't retried yet
     if (shouldRetry(error) && !originalRequest._retry) {
-      console.log(`API request failed with ${error.code || 'unknown error'}, retrying...`);
+      log(`API request failed with ${error.code || 'unknown error'}, retrying...`);
       
       // Mark as retried and increase timeout
       originalRequest._retry = true;
@@ -71,6 +79,25 @@ api.interceptors.response.use(
   }
 );
 
+// Helper function to ensure we have a socket connection before making requests
+const ensureSocketConnection = () => {
+  if (!socketService.isConnected()) {
+    log('No active socket connection, connecting now...');
+    socketService.connect();
+    
+    // Give it a short moment to connect
+    return new Promise(resolve => {
+      setTimeout(() => {
+        const socketId = socketService.getSocketId();
+        log('Socket ID after connection attempt:', socketId);
+        resolve(socketId);
+      }, 500);
+    });
+  }
+  
+  return Promise.resolve(socketService.getSocketId());
+};
+
 // API utility methods
 export const apiClient = {
   // OpenAI API calls
@@ -86,9 +113,10 @@ export const apiClient = {
     });
   },
   
-  transcribeAudio: (data) => {
-    // Connect socket and get socket ID if available
-    const socketId = socketService.getSocketId();
+  transcribeAudio: async (data) => {
+    // Ensure we have a socket connection and get the socket ID
+    const socketId = await ensureSocketConnection();
+    log('Using socket ID for transcription:', socketId);
     
     // Include socket ID in the request for real-time progress updates
     return api.post('/api/openai/transcribe', 
@@ -109,9 +137,10 @@ export const apiClient = {
     });
   },
   
-  extractAudio: (videoUrl) => {
-    // Connect socket and get socket ID if available
-    const socketId = socketService.getSocketId();
+  extractAudio: async (videoUrl) => {
+    // Ensure we have a socket connection and get the socket ID
+    const socketId = await ensureSocketConnection();
+    log('Using socket ID for audio extraction:', socketId);
     
     return api.post('/api/youtube/extract-audio', 
       { 
