@@ -38,5 +38,13 @@
       "last 1 safari version"
     ]
   },
+  "jest": {
+    "transformIgnorePatterns": [
+      "node_modules/(?!(axios)/)"
+    ],
+    "moduleNameMapper": {
+      "axios": "<rootDir>/node_modules/axios/dist/axios.js"
+    }
+  },
   "proxy": "http://localhost:5000"
 }

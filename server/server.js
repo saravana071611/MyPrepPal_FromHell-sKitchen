@@ -42,6 +42,9 @@ ensureDirectoryExists(path.join(__dirname, 'data/profiles'));
 ensureDirectoryExists(path.join(__dirname, 'data/audio'));
 ensureDirectoryExists(path.join(__dirname, 'data/temp'));
 
+// Import our port checker utility
+const portChecker = require('./utils/port-checker');
+
 // API status endpoint
 app.get('/api/status', async (req, res) => {
   const status = {
@@ -129,38 +132,51 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-// Function to try starting the server on different ports if the initial one fails
-const startServer = (port) => {
-  const server = http.createServer(app);
-  
-  server.on('error', (e) => {
-    if (e.code === 'EADDRINUSE') {
-      console.error(`Port ${port} is already in use. Trying port ${port + 1}...`);
-      startServer(port + 1);
-    } else {
+// Updated function to try starting the server on different ports if the initial one fails
+const startServer = async (port) => {
+  try {
+    // First check if the requested port is available
+    const isFree = await portChecker.isPortFree(port);
+    
+    if (!isFree) {
+      console.log(`Port ${port} is already in use. Finding an available port...`);
+      port = await portChecker.findFreePort(port + 1);
+    }
+    
+    // Create and start the server
+    const server = http.createServer(app);
+    
+    server.on('error', (e) => {
       console.error('Server error:', e.message);
-    }
-  });
-  
-  server.listen(port, () => {
-    // Update PORT variable to ensure client can connect to the correct port
-    PORT = port;
-    console.log(`Server running on port ${PORT}`);
+      process.exit(1);
+    });
     
-    // Save the port to a file for other scripts to use
-    try {
-      const portFilePath = path.join(__dirname, 'data', 'port.txt');
-      fs.writeFileSync(portFilePath, PORT.toString());
-      console.log(`Port information saved to ${portFilePath}`);
-    } catch (error) {
-      console.error('Failed to save port information:', error.message);
-    }
+    server.listen(port, () => {
+      // Update PORT variable to ensure client can connect to the correct port
+      PORT = port;
+      console.log(`Server running on port ${PORT}`);
+      
+      // Save the port to files using our utility
+      portChecker.savePortToFile(PORT);
+      
+      // Optionally update the client's port configuration
+      console.log(`Note for client: API endpoint is http://localhost:${PORT}/api`);
+      console.log(`For detailed API information, run: node api-info.js`);
+    });
     
-    // Optionally update the client's port configuration
-    console.log(`Note for client: API endpoint is http://localhost:${PORT}/api`);
-    console.log(`For detailed API information, run: node api-info.js`);
-  });
+    return server;
+  } catch (error) {
+    console.error('Error starting server:', error.message);
+    process.exit(1);
+  }
 };
 
-// Start the server with our port-switching mechanism
-startServer(PORT);
+// Start the server using our new async approach
+(async () => {
+  try {
+    await startServer(PORT);
+  } catch (error) {
+    console.error('Failed to start server:', error.message);
+    process.exit(1);
+  }
+})();
