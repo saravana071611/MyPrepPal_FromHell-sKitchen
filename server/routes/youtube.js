@@ -446,138 +446,119 @@ router.post('/extract-audio', async (req, res) => {
       });
     }
     
-    // Mock extraction for testing if needed - uncomment to use
-    /*
-    // For testing only - mock the extraction process
-    console.log('USING MOCK EXTRACTION FOR TESTING');
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    // Create a test audio file to simulate successful extraction
-    fs.writeFileSync(outputFilePath, 'Mock audio file for testing');
-    
-    if (socketId) {
-      io.to(socketId).emit('audioExtractionProgress', {
-        stage: 'completed',
-        progress: 100,
-        message: 'Audio extraction completed! (MOCK DATA)'
-      });
-    }
-    
-    return res.json({
-      success: true,
-      audioFilePath: outputFilePath,
-      audioPath: outputFilePath,
-      message: 'Audio extracted successfully (MOCK DATA)',
-      title: title,
-      isMock: true
-    });
-    */
-    
     try {
-      // Download and convert to mp3
-      console.log('Starting audio download and conversion...');
+      // Download audio using yt-dlp directly (reliable method)
+      console.log('Starting audio download with yt-dlp...');
       
-      try {
-        // First attempt with ytdl-core
-        console.log('Attempting extraction with ytdl-core...');
+      await new Promise((resolve, reject) => {
+        // Create command arguments
+        const args = [
+          videoUrl,
+          '--extract-audio',
+          '--audio-format', 'mp3',
+          '--audio-quality', '0',
+          '-o', outputFilePath,
+          '--no-check-certificate'
+        ];
         
-        // Create ytdl stream
-        const stream = safeYtdl(videoUrl);
+        console.log(`Executing yt-dlp command: yt-dlp ${args.join(' ')}`);
+        const child = require('child_process').spawn('yt-dlp', args);
         
-        let downloadProgress = 0;
+        let progressPercent = 0;
         let lastProgressUpdate = 0;
         
-        stream.on('progress', (chunkLength, downloaded, total) => {
-          // Calculate progress percentage
-          downloadProgress = Math.floor((downloaded / total) * 100);
+        child.stdout.on('data', (data) => {
+          const output = data.toString();
+          console.log(`[yt-dlp] ${output.trim()}`);
           
-          // Only emit progress updates if progress changed by at least 5% or every 2 seconds
-          const now = Date.now();
-          if (downloadProgress - lastProgressUpdate >= 5 || now - lastProgressUpdate >= 2000) {
-            lastProgressUpdate = downloadProgress;
-            console.log(`Download progress: ${downloadProgress}%`);
-            if (socketId) {
-              io.to(socketId).emit('audioExtractionProgress', {
-                stage: 'download',
-                progress: 20 + (downloadProgress * 0.6), // Map download progress to 20-80% of total progress
-                message: `Downloading audio: ${downloadProgress}%`
-              });
+          // Parse progress information
+          if (output.includes('[download]')) {
+            const match = output.match(/(\d+\.\d+)%/);
+            if (match && match[1]) {
+              progressPercent = parseFloat(match[1]);
+              
+              // Only emit progress updates if progress changed significantly
+              const now = Date.now();
+              if (progressPercent - lastProgressUpdate >= 5 || now - lastProgressUpdate >= 2000) {
+                lastProgressUpdate = progressPercent;
+                console.log(`Download progress: ${progressPercent}%`);
+                if (socketId) {
+                  io.to(socketId).emit('audioExtractionProgress', {
+                    stage: 'download',
+                    progress: 20 + (progressPercent * 0.7), // Map download progress to 20-90% of total progress
+                    message: `Downloading audio: ${Math.floor(progressPercent)}%`
+                  });
+                }
+              }
             }
           }
         });
         
-        // Process with ffmpeg
-        await new Promise((resolve, reject) => {
-          ffmpeg(stream)
-            .audioBitrate(128)
-            .save(outputFilePath)
-            .on('progress', (progress) => {
-              if (progress && progress.percent) {
-                console.log(`Processing progress: ${Math.floor(progress.percent)}%`);
-                if (socketId) {
-                  io.to(socketId).emit('audioExtractionProgress', {
-                    stage: 'processing',
-                    progress: 80 + (progress.percent * 0.2), // Map conversion progress to 80-100% of total progress
-                    message: `Processing audio: ${Math.floor(progress.percent)}%`
-                  });
-                }
-              }
-            })
-            .on('end', () => {
-              console.log(`Downloaded and converted audio: ${title}`);
-              if (socketId) {
-                io.to(socketId).emit('audioExtractionProgress', {
-                  stage: 'completed',
-                  progress: 100,
-                  message: 'Audio extraction completed!',
-                  audioPath: outputFilePath
-                });
-              }
-              resolve();
-            })
-            .on('error', (err) => {
-              console.error('Error in ffmpeg process:', err);
-              reject(err);
-            });
+        child.stderr.on('data', (data) => {
+          console.error(`[yt-dlp error] ${data.toString().trim()}`);
         });
-      } catch (ytdlError) {
-        // If ytdl-core fails, use youtube-dl-exec as fallback
-        console.error('ytdl-core extraction failed:', ytdlError.message);
         
-        if (socketId) {
-          io.to(socketId).emit('audioExtractionProgress', {
-            stage: 'fallback',
-            progress: 30,
-            message: 'Primary extraction method failed, trying alternative method...'
+        child.on('close', (code) => {
+          if (code === 0) {
+            console.log('yt-dlp process completed successfully');
+            
+            // Emit completed progress
+            if (socketId) {
+              io.to(socketId).emit('audioExtractionProgress', {
+                stage: 'completed',
+                progress: 100,
+                message: 'Audio extraction completed!',
+                audioPath: outputFilePath
+              });
+            }
+            
+            resolve();
+          } else {
+            console.error(`yt-dlp process failed with code ${code}`);
+            reject(new Error(`yt-dlp exited with code ${code}`));
+          }
+        });
+      });
+      
+      // Check file exists and has content
+      if (!fs.existsSync(outputFilePath)) {
+        console.error('Output file not found at expected path:', outputFilePath);
+        
+        // Check the temp directory to see if any files were created
+        const files = fs.readdirSync(outputDir);
+        console.log('Files in temp directory:', files);
+        
+        // Look for any similar files that might have been created
+        const baseName = path.basename(outputFilePath, path.extname(outputFilePath));
+        const similarFiles = files.filter(file => file.includes(baseName));
+        
+        if (similarFiles.length > 0) {
+          console.log('Found similar files that may match our download:');
+          similarFiles.forEach(file => {
+            console.log(`- ${file}`);
           });
-        }
-        
-        // Use our fallback extraction function
-        await extractAudioWithYoutubeDl(videoUrl, outputFilePath);
-        
-        if (socketId) {
-          io.to(socketId).emit('audioExtractionProgress', {
-            stage: 'completed',
-            progress: 100,
-            message: 'Audio extraction completed using fallback method!',
-            audioPath: outputFilePath
-          });
+          
+          // Use the first similar file
+          const actualFilePath = path.join(outputDir, similarFiles[0]);
+          console.log(`Using alternative file path: ${actualFilePath}`);
+          
+          // Copy to expected path
+          if (actualFilePath !== outputFilePath) {
+            fs.copyFileSync(actualFilePath, outputFilePath);
+            console.log(`Copied from ${actualFilePath} to ${outputFilePath}`);
+          }
+        } else {
+          throw new Error('No output audio files found after extraction');
         }
       }
       
-      console.log('Audio extraction completed successfully');
+      // Check file size
+      const stats = fs.statSync(outputFilePath);
+      console.log(`Output file size: ${Math.round(stats.size / 1024)} KB`);
       
-      // Check file exists and has content
-      if (fs.existsSync(outputFilePath)) {
-        const stats = fs.statSync(outputFilePath);
-        console.log(`Output file size: ${Math.round(stats.size / 1024)} KB`);
-        
-        if (stats.size < 1024) {
-          // File exists but is too small - probably failed
-          throw new Error('Extracted audio file is too small, extraction may have failed');
-        }
-      } else {
-        throw new Error('Output file was not created');
+      if (stats.size < 1024) {
+        // File exists but is too small - probably failed
+        throw new Error('Extracted audio file is too small, extraction may have failed');
       }
       
       // Return the path to the extracted audio file
@@ -592,35 +573,76 @@ router.post('/extract-audio', async (req, res) => {
     } catch (extractionError) {
       console.error('Error during audio extraction process:', extractionError);
       
-      // Try fallback approach - create a mock file for testing the flow
-      console.log('Extraction failed, using fallback mock audio file');
-      fs.writeFileSync(outputFilePath, 'Fallback audio file - extraction failed');
-      
-      if (socketId) {
-        io.to(socketId).emit('audioExtractionProgress', {
-          stage: 'warning',
-          progress: 95,
-          message: 'Warning: Extraction had issues, using fallback audio file'
-        });
+      // Try with youtube-dl-exec as a last resort
+      try {
+        console.log('Primary extraction failed, trying with youtube-dl-exec fallback...');
         
-        // Still send completed to unblock the client
-        io.to(socketId).emit('audioExtractionProgress', {
-          stage: 'completed',
-          progress: 100,
-          message: 'Audio extraction completed with fallback mechanism'
+        if (socketId) {
+          io.to(socketId).emit('audioExtractionProgress', {
+            stage: 'fallback',
+            progress: 50,
+            message: 'Primary extraction failed, trying alternative method...'
+          });
+        }
+        
+        await extractAudioWithYoutubeDl(videoUrl, outputFilePath);
+        
+        if (socketId) {
+          io.to(socketId).emit('audioExtractionProgress', {
+            stage: 'completed',
+            progress: 100,
+            message: 'Audio extraction completed with fallback method!',
+            audioPath: outputFilePath
+          });
+        }
+        
+        // Check file exists and has content
+        if (fs.existsSync(outputFilePath)) {
+          const stats = fs.statSync(outputFilePath);
+          console.log(`Output file size: ${Math.round(stats.size / 1024)} KB`);
+          
+          // Return the path to the extracted audio file
+          return res.json({
+            success: true,
+            audioFilePath: outputFilePath,
+            audioPath: outputFilePath,
+            message: 'Audio extracted successfully using fallback method',
+            title: title
+          });
+        } else {
+          throw new Error('Fallback extraction did not produce an output file');
+        }
+      } catch (fallbackError) {
+        console.error('Fallback extraction also failed:', fallbackError);
+        
+        // Create a mock file for testing
+        console.log('All extraction methods failed, creating fallback mock audio file');
+        fs.writeFileSync(outputFilePath, 'Fallback audio file - extraction failed');
+        
+        if (socketId) {
+          io.to(socketId).emit('audioExtractionProgress', {
+            stage: 'warning',
+            progress: 95,
+            message: 'Warning: Extraction failed, using minimal fallback file'
+          });
+          
+          // Still send completed to unblock the client
+          io.to(socketId).emit('audioExtractionProgress', {
+            stage: 'completed',
+            progress: 100,
+            message: 'Audio extraction process completed with issues - using fallback mechanism'
+          });
+        }
+        
+        // Return error response but with a path to the mock file to allow testing
+        return res.status(500).json({
+          error: 'Failed to extract audio',
+          details: `${extractionError.message}; Fallback error: ${fallbackError.message}`,
+          fallbackFile: outputFilePath,
+          isFallback: true,
+          success: false
         });
       }
-      
-      // Return success with fallback path to allow testing of the full flow
-      return res.json({
-        success: true,
-        audioFilePath: outputFilePath,
-        audioPath: outputFilePath,
-        message: 'Audio extraction completed using fallback mechanism',
-        title: title,
-        isFallback: true,
-        fallbackReason: extractionError.message
-      });
     }
   } catch (error) {
     console.error('Error extracting YouTube audio:', error);
@@ -782,74 +804,78 @@ router.post('/extract-and-transcribe', async (req, res) => {
     }
     
     try {
-      // Download and convert to mp3
-      console.log('Starting audio download and conversion...');
+      // Download and convert to mp3 - USING DIRECT YT-DLP APPROACH FIRST
+      console.log('Starting audio download using direct yt-dlp method...');
       
-      // Create ytdl stream with our safer wrapper
-      const stream = safeYtdl(videoUrl);
-      
-      let downloadProgress = 0;
-      let lastProgressUpdate = 0;
-      
-      stream.on('progress', (chunkLength, downloaded, total) => {
-        // Calculate progress percentage
-        downloadProgress = Math.floor((downloaded / total) * 100);
-        
-        // Only emit progress updates if progress changed by at least 5% or every 2 seconds
-        const now = Date.now();
-        if (downloadProgress - lastProgressUpdate >= 5 || now - lastProgressUpdate >= 2000) {
-          lastProgressUpdate = downloadProgress;
-          console.log(`Download progress: ${downloadProgress}%`);
-          if (socketId) {
-            io.to(socketId).emit('extractionProgress', {
-              stage: 'downloading',
-              progress: 10 + (downloadProgress * 0.3), // Map download progress to 10-40% of total progress
-              message: `Downloading audio: ${downloadProgress}%`
-            });
-          }
-        }
-      });
-      
-      // Process with ffmpeg
+      // Use direct yt-dlp command which has proven to be reliable
       await new Promise((resolve, reject) => {
-        ffmpeg(stream)
-          .audioBitrate(128)
-          .save(outputFilePath)
-          .on('progress', (progress) => {
-            if (progress && progress.percent) {
-              console.log(`Processing progress: ${Math.floor(progress.percent)}%`);
-              if (socketId) {
-                io.to(socketId).emit('extractionProgress', {
-                  stage: 'processing',
-                  progress: 40 + (progress.percent * 0.2), // Map conversion progress to 40-60% of total progress
-                  message: `Processing audio: ${Math.floor(progress.percent)}%`
-                });
+        // Create command arguments
+        const args = [
+          videoUrl,
+          '--extract-audio',
+          '--audio-format', 'mp3',
+          '--audio-quality', '0',
+          '-o', outputFilePath,
+          '--no-check-certificate'
+        ];
+        
+        console.log(`Executing direct yt-dlp command: yt-dlp ${args.join(' ')}`);
+        const child = require('child_process').spawn('yt-dlp', args);
+        
+        let downloadProgress = '';
+        let progressPercent = 0;
+        let lastProgressUpdate = 0;
+        
+        child.stdout.on('data', (data) => {
+          const output = data.toString();
+          console.log(`[yt-dlp] ${output.trim()}`);
+          
+          // Parse progress information
+          if (output.includes('[download]')) {
+            const match = output.match(/(\d+\.\d+)%/);
+            if (match && match[1]) {
+              progressPercent = parseFloat(match[1]);
+              
+              // Only emit progress updates if progress changed by at least 5% or every 2 seconds
+              const now = Date.now();
+              if (progressPercent - lastProgressUpdate >= 5 || now - lastProgressUpdate >= 2000) {
+                lastProgressUpdate = progressPercent;
+                console.log(`Download progress: ${progressPercent}%`);
+                if (socketId) {
+                  io.to(socketId).emit('extractionProgress', {
+                    stage: 'downloading',
+                    progress: 15 + (progressPercent * 0.35), // Map download progress to 15-50% of total progress
+                    message: `Downloading audio: ${Math.floor(progressPercent)}%`
+                  });
+                }
               }
             }
-          })
-          .on('end', () => {
-            console.log(`Downloaded and converted audio: ${title}`);
+          }
+        });
+        
+        child.stderr.on('data', (data) => {
+          console.error(`[yt-dlp error] ${data.toString().trim()}`);
+        });
+        
+        child.on('close', (code) => {
+          if (code === 0) {
+            console.log('yt-dlp process completed successfully');
+            
+            // Emit converting progress
             if (socketId) {
               io.to(socketId).emit('extractionProgress', {
-                stage: 'extracted',
-                progress: 60,
-                message: 'Audio extraction completed. Starting transcription...',
-                audioPath: outputFilePath
+                stage: 'processing',
+                progress: 50,
+                message: 'Audio extraction completed. Preparing for transcription...'
               });
             }
+            
             resolve();
-          })
-          .on('error', (err) => {
-            console.error('Error in ffmpeg process:', err);
-            if (socketId) {
-              io.to(socketId).emit('extractionProgress', {
-                stage: 'error',
-                progress: 0,
-                message: `Error processing audio: ${err.message || 'Failed to process audio'}`
-              });
-            }
-            reject(err);
-          });
+          } else {
+            console.error(`yt-dlp process failed with code ${code}`);
+            reject(new Error(`yt-dlp exited with code ${code}`));
+          }
+        });
       });
       
       // Check file exists and has content
@@ -860,7 +886,28 @@ router.post('/extract-and-transcribe', async (req, res) => {
         const files = fs.readdirSync(outputDir);
         console.log('Files in temp directory:', files);
         
-        throw new Error('Output audio file was not created');
+        // Look for any similar files (yt-dlp might have renamed)
+        const baseName = path.basename(outputFilePath, path.extname(outputFilePath));
+        const similarFiles = files.filter(file => file.includes(baseName));
+        
+        if (similarFiles.length > 0) {
+          console.log('Found similar files that may match our download:');
+          similarFiles.forEach(file => {
+            console.log(`- ${file}`);
+          });
+          
+          // Use the first similar file
+          const actualFilePath = path.join(outputDir, similarFiles[0]);
+          console.log(`Using alternative file path: ${actualFilePath}`);
+          
+          // Copy to expected path if needed
+          if (actualFilePath !== outputFilePath) {
+            fs.copyFileSync(actualFilePath, outputFilePath);
+            console.log(`Copied from ${actualFilePath} to ${outputFilePath}`);
+          }
+        } else {
+          throw new Error('Output audio file was not created');
+        }
       }
       
       const stats = fs.statSync(outputFilePath);
