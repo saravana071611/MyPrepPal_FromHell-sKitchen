@@ -260,6 +260,18 @@ const RecipeExtractor = () => {
           </button>
         </div>
         
+        <div className="example-link">
+          Example: <a 
+            href="#" 
+            onClick={(e) => {
+              e.preventDefault();
+              setVideoUrl("https://www.youtube.com/watch?v=W1XELWKaCi4");
+            }}
+          >
+            https://www.youtube.com/watch?v=W1XELWKaCi4
+          </a> (Chicken Pot Pie)
+        </div>
+        
         {error && <div className="error-message">{error}</div>}
         
         {loading && (

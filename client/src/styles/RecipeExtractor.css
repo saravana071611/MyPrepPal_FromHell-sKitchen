@@ -71,6 +71,24 @@
   opacity: 0.7;
 }
 
+.example-link {
+  color: var(--light-text);
+  font-size: 0.85rem;
+  margin-bottom: 1rem;
+  opacity: 0.8;
+}
+
+.example-link a {
+  color: var(--accent-color);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.example-link a:hover {
+  color: var(--red-team);
+  text-decoration: underline;
+}
+
 .error-message {
   color: var(--red-team);
   margin: 0.6rem 0;
