@@ -278,6 +278,67 @@ router.post('/fitness-assessment', async (req, res) => {
         errorMessage = 'OpenAI request timed out. The service might be experiencing high traffic.';
       } else if (openaiError.message.includes('billing')) {
         errorMessage = 'OpenAI billing issue. Please check your account balance.';
+      } else if (openaiError.message.includes('maximum context length') || openaiError.message.includes('token limit')) {
+        // Special handling for token limit errors - provide more detailed fallback
+        debug('Token limit exceeded - using fallback assessment');
+        
+        // Generate a fallback assessment
+        const bmi = (currentWeight / ((currentHeight / 100) * (currentHeight / 100))).toFixed(1);
+        const weightDiff = currentWeight - targetWeight;
+        const isWeightLoss = weightDiff > 0;
+        
+        let fallbackAssessment = '';
+        
+        // The Rock's part
+        fallbackAssessment += `THE ROCK:\n`;
+        fallbackAssessment += `I can see you're serious about your fitness journey! With a BMI of ${bmi}, and wanting to ${isWeightLoss ? 'lose' : 'gain'} ${Math.abs(weightDiff)}kg, I'm here to help you CRUSH those goals!\n\n`;
+        fallbackAssessment += `Based on your stats, I've calculated the perfect macros to fuel your transformation. Protein will help build and maintain muscle, carbs will power your workouts, and healthy fats support recovery.\n\n`;
+        
+        // Gordon Ramsay's part
+        fallbackAssessment += `GORDON RAMSAY:\n`;
+        fallbackAssessment += `Listen to me carefully. Your current diet is probably RUBBISH. You need to focus on quality protein, fresh vegetables, and complex carbs.\n\n`;
+        fallbackAssessment += `Here's a simple meal plan: Breakfast - egg whites with spinach. Lunch - grilled chicken with steamed vegetables. Dinner - baked fish with quinoa. Snacks - Greek yogurt with berries. SIMPLE. EFFECTIVE. NOW GO COOK!\n\n`;
+        
+        // Fallback macro goals
+        const fallbackMacroGoals = {
+          protein: Math.round(currentWeight * (isWeightLoss ? 2.2 : 1.8)),
+          carbs: Math.round(currentWeight * (isWeightLoss ? 2 : 3)),
+          fats: Math.round(currentWeight * (isWeightLoss ? 0.8 : 1)),
+          calories: Math.round(currentWeight * (isWeightLoss ? 22 : 28))
+        };
+        
+        // Add macro goals to the fallback assessment
+        fallbackAssessment += `MACRO_GOALS:\n`;
+        fallbackAssessment += `Protein: ${fallbackMacroGoals.protein} grams per day\n`;
+        fallbackAssessment += `Carbs: ${fallbackMacroGoals.carbs} grams per day\n`;
+        fallbackAssessment += `Fats: ${fallbackMacroGoals.fats} grams per day\n`;
+        fallbackAssessment += `Calories: ${fallbackMacroGoals.calories} calories per day`;
+        
+        // Store the fallback macro goals in the user profile
+        try {
+          const filePath = path.join(PROFILES_DIR, `${userId}.json`);
+          
+          if (fs.existsSync(filePath)) {
+            const userProfileRaw = fs.readFileSync(filePath, 'utf8');
+            const userProfile = JSON.parse(userProfileRaw);
+            
+            // Update profile with fallback macro goals
+            userProfile.macroGoals = fallbackMacroGoals;
+            userProfile.updatedAt = new Date().toISOString();
+            
+            fs.writeFileSync(filePath, JSON.stringify(userProfile, null, 2));
+            debug('User profile updated with fallback macro goals after token limit error');
+          }
+        } catch (profileError) {
+          debug('Error updating user profile with fallback macro goals:', profileError.message);
+        }
+        
+        // Return the fallback assessment with a note about API limits
+        debug('Sending fallback assessment to client due to token limit issues');
+        return res.json({
+          assessment: fallbackAssessment + "\n\n[Note: This is a simplified assessment due to API token limits. For a more detailed assessment, try with a more powerful API key.]",
+          macroGoals: fallbackMacroGoals
+        });
       } else {
         errorMessage = openaiError.message;
       }
@@ -460,8 +521,44 @@ Fix these issues and you might actually have something edible that aligns with y
         errorMessage = 'OpenAI request timed out. The service might be experiencing high traffic.';
       } else if (openaiError.message.includes('billing')) {
         errorMessage = 'OpenAI billing issue. Please check your account balance.';
-      } else if (openaiError.message.includes('maximum context length')) {
-        errorMessage = 'The transcript is too long for processing. Try with a shorter video.';
+      } else if (openaiError.message.includes('maximum context length') || openaiError.message.includes('token limit')) {
+        // Special handling for token limit errors - retry with even smaller input
+        debug('Token limit exceeded - trying with much smaller transcript');
+        
+        // Truncate to an even smaller size
+        const veryShortTranscript = truncatedTranscript.substring(0, 5000);
+        
+        try {
+          // Simplified prompt
+          const smallerResponse = await openai.chat.completions.create({
+            model: "gpt-3.5-turbo",
+            messages: [
+              {
+                role: "system",
+                content: "You are Gordon Ramsay. Be brief but helpful."
+              },
+              {
+                role: "user",
+                content: `Extract a recipe from this transcript and give brief cooking advice:\n${veryShortTranscript}`
+              }
+            ],
+            max_tokens: 2000,
+            temperature: 0.7,
+          });
+          
+          if (smallerResponse && smallerResponse.choices && smallerResponse.choices[0]) {
+            const smallerAnalysis = smallerResponse.choices[0].message.content.trim();
+            
+            // Return the smaller analysis with a note
+            debug('Successfully generated smaller analysis after token limit error');
+            return res.json({
+              analysis: smallerAnalysis + "\n\n[Note: This is a simplified analysis due to the transcript length. For a more detailed analysis, try with a shorter video.]"
+            });
+          }
+        } catch (retryError) {
+          debug('Failed retry with smaller transcript:', retryError.message);
+          errorMessage = 'The transcript is too long for processing. Please try with a shorter video (5-10 minutes).';
+        }
       } else {
         errorMessage = openaiError.message;
       }
