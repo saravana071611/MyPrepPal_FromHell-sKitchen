@@ -13,17 +13,6 @@ const RecipeExtractorPage = () => {
         
         <div className="profile-content">
           <div className="content-container">
-            <div className="header-avatar">
-              <img 
-                src="/images/gordon-ramsay.jpg" 
-                alt="Gordon Ramsay" 
-                className="ramsay-avatar"
-                onError={(e) => {
-                  e.target.onerror = null;
-                  e.target.src = "https://via.placeholder.com/100x100?text=Chef";
-                }}
-              />
-            </div>
             <RecipeExtractor />
           </div>
         </div>
