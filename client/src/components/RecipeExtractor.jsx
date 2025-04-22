@@ -239,7 +239,13 @@ const RecipeExtractor = () => {
         
         {recipe && (
           <div className="recipe-result">
-            <h3>Extracted Recipe</h3>
+            <h3>{recipe.title}</h3>
+            
+            <div className="recipe-section">
+              {recipe.cuisine && (
+                <p className="cuisine-tag"><strong>Cuisine:</strong> {recipe.cuisine}</p>
+              )}
+            </div>
             
             <div className="recipe-section">
               <h4>Ingredients</h4>

@@ -598,22 +598,31 @@ ${videoTitle}
 USER'S MACRO GOALS:
 ${macroGoalsText}
 
+IMPORTANT CULTURAL ACCURACY RULES:
+1. If the title mentions or implies a specific regional cuisine (like Kashmiri, Southern Italian, Northern Thai), you MUST create an authentic recipe from that EXACT regional cuisine.
+2. NEVER substitute cuisines - if the title suggests Kashmiri cuisine, do NOT create Mediterranean or generic Indian dishes.
+3. Use ingredients, spices, cooking techniques and preparation methods that are authentic and traditional to the exact regional cuisine mentioned.
+4. Each regional cuisine has unique characteristics - do not generalize or mix different culinary traditions.
+
 Please create a recipe that:
-1. Matches the theme/style suggested by the video title
-2. Meets or is adjustable to meet the user's macro goals
-3. Is suitable for meal prepping (can be cooked in batch and stored for 4-5 days)
+1. Strongly reflects the cuisine, culture, cooking techniques, and preparation style suggested by the video title
+2. Preserves the authentic flavors, spices, and cooking methods of the cuisine if a specific cuisine is mentioned or implied
+3. Meets or is adjustable to meet the user's macro goals
+4. Is suitable for meal prepping (can be cooked in batch and stored for 4-5 days)
 
 Please organize the recipe in the following JSON format:
 {
-  "title": "Recipe title",
+  "title": "Recipe title that reflects the cuisine and cooking style",
+  "cuisine": "The cuisine or cultural origin of the dish (be very specific about regional cuisines)",
   "ingredients": ["ingredient 1 with quantities", "ingredient 2 with quantities", ...],
   "instructions": ["step 1", "step 2", ...],
-  "notes": "Include meal prep instructions and storage recommendations",
+  "notes": "Include: 1) How this recipe was inspired by the video title, 2) Why specific ingredients or techniques were chosen, 3) How the cuisine's cultural context influenced the recipe, 4) Meal prep instructions and storage recommendations",
   "nutritionInfo": "Estimated nutrition information per serving that aims to meet the user's macro goals"
 }
 
 Even if the title is vague or not clearly related to cooking, please create a nutritious meal prep recipe that would meet the user's fitness goals.
 Be precise and include quantities and measurements for all ingredients.
+If the title suggests a specific cuisine (Italian, Thai, Mexican, etc.) or preparation style (grilled, slow-cooked, etc.), make sure the recipe is authentic to that cuisine or style.
 `;
 
         debug('Sending title-based prompt to OpenAI with model: gpt-4o');
@@ -623,7 +632,7 @@ Be precise and include quantities and measurements for all ingredients.
           messages: [
             {
               role: "system",
-              content: "You are a professional chef that creates delicious meal prep recipes that meet specific macro goals."
+              content: "You are a professional chef that creates delicious meal prep recipes that meet specific macro goals. You have deep knowledge of global cuisines, cooking techniques, and cultural food traditions, and you strive to create authentic recipes that respect the culinary heritage they come from. CRITICAL INSTRUCTION: Always maintain strict regional accuracy - if a title mentions or implies Kashmiri cuisine, you MUST create an authentic Kashmiri recipe with proper Kashmiri ingredients and techniques, NOT Mediterranean, generic Indian, or any other cuisine. Never substitute regional cuisines. Each regional cuisine has unique characteristics that must be preserved. Provide detailed notes that explain how the recipe was inspired by the video title, why certain ingredients or techniques were chosen, and how cultural context influenced your recipe choices."
             },
             {
               role: "user",
@@ -682,15 +691,18 @@ ${userMacroGoals ?
 
 Please organize the recipe in the following JSON format:
 {
-  "title": "Recipe title",
-  "ingredients": ["ingredient 1", "ingredient 2", ...],
+  "title": "Recipe title that reflects the cuisine and cooking style",
+  "cuisine": "The cuisine or cultural origin of the dish (extracted from the transcript or inferred)",
+  "ingredients": ["ingredient 1 with quantities", "ingredient 2 with quantities", ...],
   "instructions": ["step 1", "step 2", ...],
-  "notes": "Any additional notes or tips mentioned",
+  "notes": "Include: 1) How this recipe was inspired by the video title/transcript, 2) Why specific ingredients or techniques were chosen based on the transcript, 3) How the cuisine's cultural context influenced the recipe, 4) Any meal prep instructions, storage recommendations, or chef's tips mentioned in the transcript",
   "nutritionInfo": "Any nutrition information mentioned or estimated based on ingredients"
 }
 
 If any section is not mentioned in the transcript, return an empty string or array for that section.
 Be precise and include quantities and measurements when mentioned.
+Pay special attention to any cultural references, traditional cooking techniques, or specific cuisine styles mentioned in the transcript.
+Preserve the authentic flavors and methods of the cuisine as described in the video.
 `;
 
     // Call OpenAI
@@ -699,7 +711,7 @@ Be precise and include quantities and measurements when mentioned.
       messages: [
         {
           role: "system",
-          content: "You are a professional chef assistant that extracts recipes from cooking video transcripts."
+          content: "You are a professional chef assistant that extracts recipes from cooking video transcripts. You have expertise in global cuisines and cultural cooking traditions, and you pay close attention to authentic ingredients, techniques, and flavor profiles specific to different culinary traditions. CRITICAL INSTRUCTION: Maintain strict regional accuracy - if the transcript mentions or refers to a specific regional cuisine (like Kashmiri, Northern Thai, etc.), ensure the recipe reflects that EXACT regional cuisine with authentic ingredients and techniques. Never generalize or substitute regional cuisines. In your notes, explain how the recipe was inspired by the content, why certain ingredients or techniques were chosen based on the transcript, and how cultural context influenced the recipe."
         },
         {
           role: "user",
