@@ -3,6 +3,29 @@ import { apiClient } from '../utils/api';
 import { useSocket } from '../contexts/SocketContext';
 import '../styles/RecipeExtractor.css';
 
+// Helper function to format duration in seconds to HH:MM:SS format
+const formatDuration = (seconds) => {
+  if (!seconds || isNaN(seconds)) return 'Unknown';
+  
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const remainingSeconds = seconds % 60;
+  
+  if (hours > 0) {
+    return `${hours}:${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+  } else {
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  }
+};
+
+// Helper function to format view count with commas
+const formatViews = (views) => {
+  if (!views || isNaN(views)) return 'Unknown';
+  
+  // Format with commas for thousands
+  return new Intl.NumberFormat().format(views);
+};
+
 const RecipeExtractor = () => {
   const [videoUrl, setVideoUrl] = useState('');
   const [videoInfo, setVideoInfo] = useState(null);
@@ -39,6 +62,38 @@ const RecipeExtractor = () => {
       };
     }
   }, [socket]);
+
+  // Check for preloaded video URL in the query parameters
+  useEffect(() => {
+    // Parse the query parameters
+    const queryParams = new URLSearchParams(window.location.search);
+    const preloadUrl = queryParams.get('url');
+    
+    // If a URL is provided and it's a valid YouTube URL
+    if (preloadUrl && validateYouTubeUrl(preloadUrl)) {
+      console.log('Preloading video URL from query parameter:', preloadUrl);
+      setVideoUrl(preloadUrl);
+      
+      // Optionally auto-fetch video info
+      if (queryParams.get('autoload') === 'true') {
+        setTimeout(() => {
+          getVideoInfo();
+        }, 500);
+      }
+    }
+    
+    // Special case for the chicken pot pie recipe
+    if (window.location.href.includes('chicken-pot-pie')) {
+      const chickenPotPieUrl = 'https://www.youtube.com/watch?v=W1XELWKaCi4';
+      console.log('Preloading chicken pot pie recipe video:', chickenPotPieUrl);
+      setVideoUrl(chickenPotPieUrl);
+      
+      // Auto-fetch video info
+      setTimeout(() => {
+        getVideoInfo();
+      }, 500);
+    }
+  }, []); // Empty dependency array means this runs once when component mounts
 
   const handleUrlChange = (e) => {
     setVideoUrl(e.target.value);
@@ -224,11 +279,14 @@ const RecipeExtractor = () => {
         {videoInfo && (
           <div className="video-info">
             <h3>{videoInfo.title}</h3>
-            <p>Duration: {Math.floor(videoInfo.duration / 60)}:{(videoInfo.duration % 60).toString().padStart(2, '0')}</p>
-            {videoInfo.thumbnailUrl && (
+            <p>Created by: {videoInfo.author || 'Unknown Creator'}</p>
+            <p>Duration: {formatDuration(videoInfo.length_seconds)}</p>
+            <p>Views: {formatViews(videoInfo.views)}</p>
+            <p>Published: {videoInfo.publish_date || 'Unknown date'}</p>
+            {videoInfo.thumbnail_url && (
               <div className="thumbnail">
                 <img 
-                  src={videoInfo.thumbnailUrl} 
+                  src={videoInfo.thumbnail_url} 
                   alt={videoInfo.title}
                   style={{ maxWidth: '100%', maxHeight: 200 }} 
                 />
