@@ -36,14 +36,13 @@ app.get('/api/status', async (req, res) => {
   // Test OpenAI API
   if (process.env.OPENAI_API_KEY) {
     try {
-      const { Configuration, OpenAIApi } = require('openai');
-      const configuration = new Configuration({
+      const { OpenAI } = require('openai');
+      const openai = new OpenAI({
         apiKey: process.env.OPENAI_API_KEY,
       });
-      const openai = new OpenAIApi(configuration);
       
-      // Simple model list request to verify connectivity
-      await openai.listModels();
+      // Simple models list request to verify connectivity
+      await openai.models.list();
       status.openai = 'Connected';
     } catch (error) {
       console.error('OpenAI API test failed:', error.message);
