@@ -14,6 +14,9 @@ dotenv.config();
 const app = express();
 let PORT = process.env.PORT || 5000;
 
+// Import audio cleanup utility
+const cleanupAudioFiles = require('./cleanup-audio');
+
 // Middleware
 app.use(cors());
 app.use(express.json());
@@ -282,6 +285,17 @@ const startServer = async (port, server) => {
 (async () => {
   try {
     console.log('Starting server...');
+    
+    // Clean up previous audio extractions
+    console.log('Cleaning up previous audio extractions...');
+    try {
+      const cleanupStats = cleanupAudioFiles();
+      console.log(`Cleanup completed: removed ${cleanupStats.deleted} files (${Math.round(cleanupStats.bytes / (1024 * 1024))} MB)`);
+    } catch (cleanupError) {
+      console.error('Warning: Audio cleanup failed:', cleanupError.message);
+      console.log('Continuing server startup...');
+    }
+    
     const port = await startServer(PORT, server);
     console.log(`Server started successfully on port ${port}!`);
     
