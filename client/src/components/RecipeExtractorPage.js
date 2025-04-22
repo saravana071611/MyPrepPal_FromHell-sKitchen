@@ -12,6 +12,7 @@ const RecipeExtractorPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [step, setStep] = useState(1);
+  const [userId, setUserId] = useState(localStorage.getItem('userId') || null);
 
   // Load user profile if available
   const loadUserProfile = async () => {
@@ -25,6 +26,11 @@ const RecipeExtractorPage = () => {
       // Continue without profile
     }
   };
+
+  // Load profile on component mount
+  useEffect(() => {
+    loadUserProfile();
+  }, [userId]);
 
   // Handle video URL input
   const handleVideoUrlChange = (e) => {
