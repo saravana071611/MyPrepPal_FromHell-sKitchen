@@ -689,19 +689,23 @@ Fix these issues and you might actually have something edible that aligns with y
 router.post('/transcribe', async (req, res) => {
   debug('Received transcription request');
   try {
-    const { videoUrl, socketId } = req.body;
+    const { videoUrl, audioPath, audioFilePath: reqAudioFilePath, socketId } = req.body;
     const io = req.app.get('io');
     
-    if (!videoUrl) {
-      debug('Missing videoUrl in request');
+    // Use the provided audio path, prioritizing audioPath over audioFilePath
+    let providedAudioPath = audioPath || reqAudioFilePath;
+    
+    // If no audio path was provided but a videoUrl was, we'll try to find the audio file
+    if (!providedAudioPath && !videoUrl) {
+      debug('Missing audioPath/audioFilePath and videoUrl in request');
       if (socketId) {
         io.to(socketId).emit('transcriptionProgress', {
           stage: 'error',
           progress: 0,
-          message: 'Video URL is required for transcription'
+          message: 'Audio path or video URL is required for transcription'
         });
       }
-      return res.status(400).json({ error: 'Video URL is required for transcription' });
+      return res.status(400).json({ error: 'Either audio path or video URL is required for transcription' });
     }
     
     // Send initial progress update
@@ -713,36 +717,58 @@ router.post('/transcribe', async (req, res) => {
       });
     }
     
-    // Find the extracted audio file based on the video URL
-    // The file should be in the temp directory with a pattern that includes timestamp
-    const tempDir = path.join(__dirname, '../temp');
-    const files = fs.readdirSync(tempDir);
+    // Set up the audio file path
+    let audioFilePath;
     
-    // Sort files by creation time (newest first) to get the most recent extraction
-    const audioFiles = files
-      .filter(file => file.startsWith('audio_') && file.endsWith('.mp3'))
-      .map(file => {
-        const filePath = path.join(tempDir, file);
-        const stats = fs.statSync(filePath);
-        return { file, path: filePath, time: stats.mtime.getTime() };
-      })
-      .sort((a, b) => b.time - a.time);
-    
-    if (audioFiles.length === 0) {
-      debug('No audio files found in temp directory');
-      if (socketId) {
-        io.to(socketId).emit('transcriptionProgress', {
-          stage: 'error',
-          progress: 0,
-          message: 'No extracted audio files found. Please extract audio first.'
-        });
+    // If we have a provided audio path, use it directly
+    if (providedAudioPath) {
+      debug('Using provided audio path:', providedAudioPath);
+      audioFilePath = providedAudioPath;
+      
+      // Check if the file actually exists
+      if (!fs.existsSync(audioFilePath)) {
+        debug('Provided audio file does not exist:', audioFilePath);
+        if (socketId) {
+          io.to(socketId).emit('transcriptionProgress', {
+            stage: 'error',
+            progress: 0,
+            message: 'Provided audio file does not exist'
+          });
+        }
+        return res.status(400).json({ error: 'Provided audio file does not exist' });
       }
-      return res.status(400).json({ error: 'No extracted audio files found. Please extract audio first.' });
+    } else {
+      // Otherwise, find the extracted audio file based on the video URL
+      // The file should be in the temp directory with a pattern that includes timestamp
+      const tempDir = path.join(__dirname, '../temp');
+      const files = fs.readdirSync(tempDir);
+      
+      // Sort files by creation time (newest first) to get the most recent extraction
+      const audioFiles = files
+        .filter(file => file.startsWith('audio_') && file.endsWith('.mp3'))
+        .map(file => {
+          const filePath = path.join(tempDir, file);
+          const stats = fs.statSync(filePath);
+          return { file, path: filePath, time: stats.mtime.getTime() };
+        })
+        .sort((a, b) => b.time - a.time);
+      
+      if (audioFiles.length === 0) {
+        debug('No audio files found in temp directory');
+        if (socketId) {
+          io.to(socketId).emit('transcriptionProgress', {
+            stage: 'error',
+            progress: 0,
+            message: 'No extracted audio files found. Please extract audio first.'
+          });
+        }
+        return res.status(400).json({ error: 'No extracted audio files found. Please extract audio first.' });
+      }
+      
+      // Use the most recent audio file
+      audioFilePath = audioFiles[0].path;
+      debug('Using most recent audio file:', audioFilePath);
     }
-    
-    // Use the most recent audio file
-    const audioFilePath = audioFiles[0].path;
-    debug('Using most recent audio file:', audioFilePath);
     
     // Update progress - found audio file
     if (socketId) {
@@ -753,8 +779,21 @@ router.post('/transcribe', async (req, res) => {
       });
     }
     
-    const fileStats = fs.statSync(audioFilePath);
-    debug('Audio file size:', Math.round(fileStats.size / 1024 / 1024 * 100) / 100, 'MB');
+    // Ensure the file exists and get stats
+    try {
+      const fileStats = fs.statSync(audioFilePath);
+      debug('Audio file size:', Math.round(fileStats.size / 1024 / 1024 * 100) / 100, 'MB');
+    } catch (statError) {
+      debug('Error accessing audio file:', statError.message);
+      if (socketId) {
+        io.to(socketId).emit('transcriptionProgress', {
+          stage: 'error',
+          progress: 0,
+          message: `Error accessing audio file: ${statError.message}`
+        });
+      }
+      return res.status(500).json({ error: 'Error accessing audio file', details: statError.message });
+    }
     
     // Mock data if no OpenAI API key is available
     if (!hasApiKey || !openai) {

@@ -8,6 +8,8 @@ import Footer from './components/Footer';
 import LandingPage from './components/LandingPage';
 import UserProfilePage from './components/UserProfilePage';
 import RecipeExtractorPage from './components/RecipeExtractorPage';
+import TestSocketPage from './components/TestSocketPage';
+import RecipeExtractorTester from './components/RecipeExtractorTester';
 
 // Styles
 import './styles/App.css';
@@ -58,6 +60,8 @@ function App() {
           <Route path="/" element={<LandingPage apiStatus={apiStatus} refreshApiStatus={refreshApiStatus} />} />
           <Route path="/profile" element={<UserProfilePage />} />
           <Route path="/recipe-extractor" element={<RecipeExtractorPage />} />
+          <Route path="/test-socket" element={<TestSocketPage />} />
+          <Route path="/recipe-tester" element={<RecipeExtractorTester />} />
         </Routes>
       </main>
       

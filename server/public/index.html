@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Socket.IO Test Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #333;
+        }
+        #status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .connected {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .disconnected {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        button {
+            padding: 8px 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px 0;
+        }
+        button:hover {
+            background-color: #0069d9;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        #events {
+            margin-top: 20px;
+            border: 1px solid #ddd;
+            padding: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .event {
+            margin: 5px 0;
+            padding: 5px;
+            border-bottom: 1px solid #eee;
+        }
+        .progress-container {
+            width: 100%;
+            background-color: #f1f1f1;
+            margin: 10px 0;
+            border-radius: 4px;
+            height: 20px;
+        }
+        #progress-bar {
+            height: 20px;
+            background-color: #4CAF50;
+            border-radius: 4px;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        #extraction-details {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Socket.IO Test Page</h1>
+    
+    <div id="status" class="disconnected">Disconnected</div>
+    
+    <button id="start-test" disabled>Start Test Extraction</button>
+    
+    <div class="progress-container">
+        <div id="progress-bar"></div>
+    </div>
+    
+    <div id="extraction-details">
+        <div>Stage: <span id="current-stage">-</span></div>
+        <div>Progress: <span id="progress-percent">0</span>%</div>
+        <div>Elapsed Time: <span id="elapsed-time">0</span> seconds</div>
+        <div>Estimated Time Remaining: <span id="remaining-time">-</span></div>
+    </div>
+    
+    <h2>Events Log</h2>
+    <div id="events"></div>
+    
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const statusElement = document.getElementById('status');
+        const startButton = document.getElementById('start-test');
+        const eventsElement = document.getElementById('events');
+        const progressBar = document.getElementById('progress-bar');
+        const currentStage = document.getElementById('current-stage');
+        const progressPercent = document.getElementById('progress-percent');
+        const elapsedTime = document.getElementById('elapsed-time');
+        const remainingTime = document.getElementById('remaining-time');
+        
+        // Log event to the events div
+        function logEvent(event, data) {
+            const eventElement = document.createElement('div');
+            eventElement.className = 'event';
+            
+            const eventName = document.createElement('strong');
+            eventName.textContent = event + ': ';
+            
+            const eventData = document.createElement('span');
+            eventData.textContent = typeof data === 'object' ? JSON.stringify(data) : data;
+            
+            eventElement.appendChild(eventName);
+            eventElement.appendChild(eventData);
+            eventsElement.appendChild(eventElement);
+            
+            // Auto scroll to bottom
+            eventsElement.scrollTop = eventsElement.scrollHeight;
+        }
+        
+        // Connection events
+        socket.on('connect', () => {
+            statusElement.textContent = 'Connected';
+            statusElement.className = 'connected';
+            startButton.disabled = false;
+            logEvent('connect', 'Socket connected');
+        });
+        
+        socket.on('disconnect', () => {
+            statusElement.textContent = 'Disconnected';
+            statusElement.className = 'disconnected';
+            startButton.disabled = true;
+            logEvent('disconnect', 'Socket disconnected');
+        });
+        
+        // Extraction events
+        socket.on('extraction:start', (data) => {
+            logEvent('extraction:start', data);
+            progressBar.style.width = '0%';
+            currentStage.textContent = 'Starting...';
+        });
+        
+        socket.on('extraction:progress', (data) => {
+            logEvent('extraction:progress', data);
+            progressBar.style.width = data.percentComplete + '%';
+            progressPercent.textContent = data.percentComplete;
+            currentStage.textContent = data.stage;
+            elapsedTime.textContent = data.elapsedTime;
+            remainingTime.textContent = data.estimatedTimeRemaining !== null 
+                ? data.estimatedTimeRemaining + ' seconds' 
+                : 'Calculating...';
+        });
+        
+        socket.on('extraction:complete', (data) => {
+            logEvent('extraction:complete', data);
+            progressBar.style.width = '100%';
+            currentStage.textContent = 'Complete';
+            startButton.disabled = false;
+        });
+        
+        socket.on('extraction:error', (data) => {
+            logEvent('extraction:error', data);
+            progressBar.style.width = '0%';
+            currentStage.textContent = 'Error';
+            startButton.disabled = false;
+        });
+        
+        // Start test extraction
+        startButton.addEventListener('click', () => {
+            socket.emit('start-test-extraction');
+            startButton.disabled = true;
+            logEvent('start-test-extraction', 'Requested test extraction');
+        });
+    </script>
+</body>
+</html> 
