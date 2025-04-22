@@ -4,52 +4,35 @@ echo   Starting MyPrepPal from Hell's Kitchen
 echo =========================================
 
 :: Kill any existing Node.js processes
-echo:
-echo Clearing ports by terminating Node.js processes...
+echo Terminating any existing Node processes...
 taskkill /F /IM node.exe >nul 2>&1
-if %ERRORLEVEL% EQU 0 (
-  echo All Node.js processes terminated.
-) else (
-  echo No Node.js processes found running.
-)
-
-:: Give a moment for ports to be released
-echo:
-echo Waiting for ports to be released...
 timeout /t 2 /nobreak >nul
 
-:: Find a free port
-echo:
-echo Finding an available port...
-node server/utils/port-checker.js
-if %ERRORLEVEL% NEQ 0 (
-  echo Failed to find an available port.
-  goto :error
-)
+:: Use a fixed port for simplicity
+set PORT=5000
 
-:: Start the server in a new window
-echo:
-echo Starting server...
-start "MyPrepPal Server" cmd /c "cd server && node server.js"
+:: Create the required directories if they don't exist
+if not exist "server\data" mkdir server\data
 
-:: Wait for the server to initialize
-echo:
-echo Waiting for server to initialize...
+:: Create port files directly
+echo %PORT% > current-port.txt
+echo %PORT% > server\data\port.txt
+
+:: Start server in a separate window
+echo Starting server on port %PORT%...
+start "MyPrepPal Server" cmd /k "cd server && set PORT=%PORT% && node server.js"
+
+:: Wait for server to initialize
+echo Waiting for server to start (5 seconds)...
 timeout /t 5 /nobreak >nul
 
-:: Start the client in a new window
-echo:
+:: Start client in a separate window
 echo Starting client...
-start "MyPrepPal Client" cmd /c "cd client && npm start"
+start "MyPrepPal Client" cmd /k "cd client && set PORT=%PORT% && npm start"
 
-echo:
-echo Application startup complete!
-echo Both server and client are running in separate windows.
-echo Close those windows when you're done using the application.
-goto :end
-
-:error
-echo Failed to start the application. Please check the error messages above.
-pause
-
-:end 
+echo.
+echo Both server and client should now be running in separate windows.
+echo The application is accessible at: http://localhost:3000
+echo.
+echo To stop the application, close the server and client windows,
+echo or run 'stop-app.bat' to terminate all Node.js processes. 
