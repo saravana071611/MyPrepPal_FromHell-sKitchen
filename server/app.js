@@ -3,6 +3,8 @@ const cors = require('cors');
 const path = require('path');
 const http = require('http');
 const { initializeSocketIO } = require('./socket');
+const OpenAI = require('openai');
+const ytdl = require('ytdl-core');
 
 // Import routes
 const youtubeRoutes = require('./routes/youtube');
@@ -28,9 +30,43 @@ app.use('/api/youtube', youtubeRoutes);
 app.use('/api/openai', openaiRoutes);
 app.use('/api/profiles', profileRoutes);
 
-// Status endpoint
-app.get('/api/status', (req, res) => {
-  res.json({ status: 'online', timestamp: new Date().toISOString() });
+// Enhanced status endpoint that checks OpenAI and YouTube APIs
+app.get('/api/status', async (req, res) => {
+  const status = {
+    server: 'Connected',
+    timestamp: new Date().toISOString(),
+    openai: 'Disconnected',
+    youtube: 'Disconnected'
+  };
+
+  // Check OpenAI API connection
+  if (process.env.OPENAI_API_KEY) {
+    try {
+      const openai = new OpenAI({
+        apiKey: process.env.OPENAI_API_KEY
+      });
+      
+      // Make a lightweight call to the OpenAI API to check connectivity
+      await openai.models.list({ limit: 1 });
+      status.openai = 'Connected';
+    } catch (error) {
+      console.error('OpenAI API connection check failed:', error.message);
+      status.openai = 'Disconnected';
+    }
+  }
+
+  // Check YouTube API connection
+  try {
+    // Use a popular video ID that's likely to be available for a long time
+    const videoId = 'dQw4w9WgXcQ'; // Rick Astley's "Never Gonna Give You Up"
+    await ytdl.getBasicInfo(videoId);
+    status.youtube = 'Connected';
+  } catch (error) {
+    console.error('YouTube API connection check failed:', error.message);
+    status.youtube = 'Disconnected';
+  }
+
+  res.json(status);
 });
 
 // Start server

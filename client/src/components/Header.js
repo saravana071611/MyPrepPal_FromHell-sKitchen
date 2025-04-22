@@ -31,6 +31,9 @@ const Header = () => {
             <li className={location.pathname === '/recipe-extractor' ? 'active' : ''}>
               <Link to="/recipe-extractor">Recipe Extractor</Link>
             </li>
+            <li className={location.pathname === '/extract-and-prep' ? 'active' : ''}>
+              <Link to="/extract-and-prep">Extract & Prep</Link>
+            </li>
             <li className="dev-menu-toggle">
               <button onClick={toggleDevMenu}>
                 Dev Tools {showDevMenu ? '▲' : '▼'}

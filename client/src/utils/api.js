@@ -19,7 +19,7 @@ const log = (...args) => {
 };
 
 // Define server port - kept consistent with proxy setting in package.json
-const SERVER_PORT = 5001;
+const SERVER_PORT = 5000;
 
 // Determine if we should retry the request
 const shouldRetry = (error) => {

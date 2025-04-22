@@ -538,7 +538,7 @@ router.post('/recipe-analysis', async (req, res) => {
   debug('Request body:', req.body);
   
   try {
-    const { transcript, videoUrl, userId } = req.body;
+    const { transcript, videoUrl, userId, fullMealPrep } = req.body;
     
     // First, try to get the user's macro goals from their profile if userId is provided
     let userMacroGoals = null;
@@ -597,6 +597,21 @@ router.post('/recipe-analysis', async (req, res) => {
     if (!hasApiKey || !openai) {
       debug('Using mock recipe because OpenAI API key is not available');
       
+      // If fullMealPrep is requested, return mock meal prep data
+      if (fullMealPrep) {
+        return res.json({
+          mealPrep: {
+            raw: "Gordon Ramsay's analysis and meal prep guide",
+            feedback: "The original recipe was quite basic and lacked depth of flavor. I've enhanced it with proper seasoning, better cooking techniques, and made it more suitable for meal prep by ensuring it will reheat well throughout the week.",
+            groceryList: "**Proteins:**\n- 2 pounds chicken breast, diced\n- 4 slices bacon, chopped\n\n**Vegetables:**\n- 2 medium onions, diced\n- 4 carrots, diced\n- 3 celery stalks, diced\n- 2 cups frozen peas\n- 2 cups mushrooms, sliced\n\n**Dairy:**\n- 1 cup heavy cream\n- 4 tablespoons butter\n\n**Pantry Items:**\n- 2 cups chicken stock\n- 1/4 cup all-purpose flour\n- 2 sheets puff pastry\n- 2 tablespoons olive oil\n- 3 cloves garlic, minced\n- 1 tablespoon fresh thyme\n- 1 tablespoon fresh rosemary, chopped\n- Salt and pepper to taste",
+            instructions: "1. **Prep Work (10 mins):**\n   - Dice chicken into bite-sized pieces\n   - Chop all vegetables to equal sizes (KEY for even cooking!)\n   - Prep herbs and set aside\n\n2. **Cook Protein (8 mins):**\n   - Heat large deep pan over MEDIUM-HIGH heat\n   - Add olive oil and butter until SHIMMERING\n   - Add chicken, season with salt and pepper\n   - Cook until JUST golden (DO NOT OVERCOOK!)\n   - Remove chicken and set aside\n\n3. **Build Flavor Base (10 mins):**\n   - In same pan, add bacon and render until crisp\n   - Add onions, carrots, celery - cook until softened\n   - Add mushrooms, cook until moisture evaporates\n   - Add garlic, thyme, rosemary - cook 30 SECONDS ONLY\n\n4. **Create Sauce (5 mins):**\n   - Sprinkle flour over vegetables, cook 2 mins (NO LUMPS!)\n   - GRADUALLY add chicken stock while whisking\n   - Bring to simmer until thickened\n   - Stir in cream, simmer 2 minutes\n\n5. **Combine & Portion (7 mins):**\n   - Add chicken back to sauce\n   - Add frozen peas (NO NEED TO THAW)\n   - Taste and adjust seasoning (CRUCIAL STEP!)\n   - Divide into 5 oven-safe containers\n\n6. **Prep for Storage:**\n   - Cover containers with puff pastry if eating within 2 days\n   - For longer storage, keep pastry separate and add before reheating",
+            macros: "**Macro Breakdown Per Portion:**\n\n- **Calories:** ~450 kcal\n- **Protein:** 35g\n- **Carbs:** 25g\n- **Fat:** 22g\n\n**Key Nutrients:**\n- High in protein for muscle maintenance\n- Contains selenium and B vitamins from chicken\n- Provides vitamin A and K from vegetables\n- Good source of iron\n\n**Ideal For:**\n- Active individuals needing balanced meals\n- Those looking for moderate-calorie, protein-rich options\n- Meal preppers wanting satisfying, reheatable meals\n\n**Nutrition Notes:**\n- For lower calories, reduce butter and use light cream\n- For higher protein, increase chicken portion\n- For lower carbs, skip puff pastry and use cauliflower topping",
+            storage: "**Storage Guidelines:**\n\n**Refrigerator Storage (3-4 days):**\n- Store in airtight glass containers\n- Keep pastry separate until reheating\n- Ensure containers are cooled before refrigerating\n\n**Freezer Storage (up to 1 month):**\n- Use freezer-safe containers with tight seals\n- Label with date and contents\n- Leave slight expansion room at top\n- Do not freeze with pastry topping\n\n**Reheating Instructions:**\n\n**Oven Method (Preferred):**\n1. Preheat oven to 375°F (190°C)\n2. If frozen, thaw overnight in refrigerator\n3. Add puff pastry topping if desired\n4. Bake for 15-20 minutes until pastry is golden and filling bubbles\n\n**Microwave Method (Quick):**\n1. Remove pastry topping if present\n2. Cover with microwave-safe lid, leaving vent\n3. Heat on medium power for 2-3 minutes\n4. Stir and heat additional 1-2 minutes until 165°F internal temperature\n\n**Food Safety:**\n- Never leave at room temperature more than 2 hours\n- Reheat only once to 165°F internal temperature\n- If reheating from frozen in microwave, use defrost setting first"
+          },
+          source: 'mock_data'
+        });
+      }
+      
       // Return mock recipe data for testing
       return res.json({
         recipe: {
@@ -634,7 +649,67 @@ router.post('/recipe-analysis', async (req, res) => {
       });
     }
     
-    debug('Analyzing recipe with OpenAI');
+    // If fullMealPrep is requested, we'll use MealPrepController
+    if (fullMealPrep) {
+      debug('Full meal prep analysis requested');
+      
+      try {
+        // Create a temporary instance of MealPrepController
+        const MealPrepController = require('../meal-prep-controller');
+        const mealPrepController = new MealPrepController({
+          apiKey: process.env.OPENAI_API_KEY,
+          debug: true
+        });
+        
+        // Get Gordon Ramsay's review
+        debug('Getting Gordon Ramsay review');
+        const gordonReview = await mealPrepController.getGordonReview(transcript);
+        
+        // Get detailed feedback on original recipe
+        debug('Getting detailed feedback');
+        const recipeFeedback = await mealPrepController.getRecipeFeedback(transcript, gordonReview);
+        
+        // Get nutrition and macro goals
+        debug('Getting macro analysis');
+        const macroAnalysis = await mealPrepController.getMacroAnalysis(gordonReview);
+        
+        // Get a more structured grocery list
+        debug('Getting structured grocery list');
+        const structuredGroceryList = await mealPrepController.getStructuredGroceryList(gordonReview);
+        
+        // Get detailed cooking method
+        debug('Getting detailed cooking method');
+        const detailedCookingMethod = await mealPrepController.getDetailedCookingMethod(gordonReview);
+        
+        // Get storage instructions
+        debug('Getting storage instructions');
+        const storageInstructions = await mealPrepController.getStorageInstructions(gordonReview);
+        
+        // Combine all meal prep data
+        const mealPrepData = {
+          raw: gordonReview,
+          feedback: recipeFeedback,
+          groceryList: structuredGroceryList,
+          instructions: detailedCookingMethod,
+          macros: macroAnalysis,
+          storage: storageInstructions
+        };
+        
+        debug('Sending complete meal prep data response');
+        return res.json({
+          mealPrep: mealPrepData,
+          source: 'transcript'
+        });
+      } catch (mealPrepError) {
+        debug('Error in meal prep generation:', mealPrepError);
+        return res.status(500).json({
+          error: 'Failed to generate meal prep guide',
+          details: mealPrepError.message
+        });
+      }
+    }
+    
+    debug('Standard recipe analysis requested');
     
     // If we have no transcript but have a videoUrl, try to get the video title
     if (!transcript && videoUrl) {
