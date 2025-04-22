@@ -64,23 +64,22 @@ const UserProfilePage = () => {
       
       // Get weight goal from Gordon's section
       const isWeightLoss = gordonSection.toLowerCase().includes('lose weight') || 
-                           gordonSection.toLowerCase().includes('losing weight');
+                           gordonSection.toLowerCase().includes('losing weight') ||
+                           gordonSection.toLowerCase().includes('weight loss');
       
-      // Create a default Rock section
-      rockSection = `Hey there! I'm here to help you on your fitness journey.
+      // Create a default Rock section with more specific workout instructions
+      rockSection = `FOCUS. DISCIPLINE. CONSISTENCY. These aren't just words - they're your new lifestyle.
 
-Remember: FOCUS. COMMITMENT. RESULTS. That's what it takes to transform your body.
+YOUR WEEKLY WORKOUT SCHEDULE:
+• Monday: PUSH - Chest/shoulders/triceps - 4×10 reps, 60sec rest
+• Tuesday: 35min HIIT cardio + core (4 rounds of 45sec work/15sec rest)
+• Wednesday: PULL - Back/biceps - 4×10 reps, 60sec rest
+• Thursday: Active recovery - 30min walk + stretching
+• Friday: LEGS - Squats/lunges/deadlifts - 4×10 reps, 75sec rest
+• Saturday: 45min steady cardio + mobility work
+• Sunday: FULL REST (but meal prep for the week!)
 
-Your WORKOUT PLAN:
-- Monday: Push day (chest, shoulders, triceps) - 4 sets of 8-12 reps
-- Tuesday: 30 min cardio & core
-- Wednesday: Pull day (back & biceps) - 4 sets of 8-12 reps
-- Thursday: Rest or light activity
-- Friday: Leg day (squats, lunges, deadlifts) - 4 sets of 8-12 reps
-- Saturday: Full body HIIT - 20 minutes
-- Sunday: Active recovery - walking or stretching
-
-Stay consistent with both your workouts and nutrition. ${isWeightLoss ? "You will lose that weight" : "You will reach your goals"} if you put in the work every single day!`;
+THE BOTTOM LINE: Train 5-6 days/week. Progressive overload - add weight or reps each week. Track EVERYTHING. ${isWeightLoss ? "You didn't gain this weight overnight, and you won't lose it overnight." : "Building quality muscle takes time and consistency."} COMMIT to the process!`;
     }
     
     // Log for debugging

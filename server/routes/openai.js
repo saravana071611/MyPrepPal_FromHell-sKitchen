@@ -74,19 +74,17 @@ router.post('/fitness-assessment', async (req, res) => {
       
       let mockAssessment = '';
       
-      // Gordon Ramsay's part (now first)
+      // Gordon Ramsay's part (now first) - Focus on diet and weight
       mockAssessment += `**GORDON RAMSAY:**\n`;
-      mockAssessment += `Right, listen to me carefully. Your current diet is probably ABSOLUTE RUBBISH based on these numbers. ${bmi > 25 ? "You're clearly eating too much processed junk!" : bmi < 18.5 ? "You're not eating enough quality food!" : "You need to focus on quality, not just quantity!"}\n\n`;
-      mockAssessment += `Here's what you need to do: Cut the bloody processed foods, they're KILLING your progress! Focus on lean proteins - chicken breast, fish, and eggs. FRESH vegetables with every meal. Complex carbs like sweet potatoes and brown rice. And for God's sake, drink more water!\n\n`;
-      mockAssessment += `A simple meal plan: Breakfast - egg white omelet with spinach and avocado. Lunch - grilled chicken with roasted vegetables. Dinner - baked salmon with quinoa and steamed broccoli. Snacks - Greek yogurt with berries or a handful of nuts. DONE. SIMPLE. EFFECTIVE. NOW GET COOKING!\n\n`;
+      mockAssessment += `LISTEN UP! You need to ${isWeightLoss ? 'lose' : 'gain'} ${Math.abs(weightDiff)}kg and your diet is CRITICAL. With a BMI of ${bmi}, ${bmi > 25 ? "your current eating habits are KILLING your progress!" : bmi < 18.5 ? "you're DANGEROUSLY underweight!" : "you need to focus on QUALITY!"}\n\n`;
+      mockAssessment += `THREE STEPS:\n1. ELIMINATE processed junk! No more sugary drinks, fast food, or packaged snacks - they're GARBAGE.\n2. INCREASE protein - lean meats, fish, eggs. ${currentWeight > 100 ? "PORTION CONTROL is essential!" : "Don't skimp on portion sizes!"}\n3. VEGETABLES with EVERY meal. No excuses! Green veg is non-negotiable.\n\n`;
+      mockAssessment += `MEAL PLAN:\n• Breakfast: ${isWeightLoss ? "Egg white omelette with spinach" : "Whole eggs with avocado toast"}\n• Lunch: Grilled chicken breast, steamed broccoli, ${isWeightLoss ? "¼ cup brown rice" : "1 cup brown rice"}\n• Dinner: Baked salmon, asparagus, ${isWeightLoss ? "small sweet potato" : "large sweet potato"}\n• Snack: Greek yogurt with berries ${isWeightLoss ? "(measure it!)" : "and a handful of nuts"}\n\nSTICK TO THIS PLAN or don't bother asking for my help again!\n\n`;
       
-      // The Rock's part (now second) - Ensure it's substantial
+      // The Rock's part - Focus on exercise frequency and concrete steps
       mockAssessment += `**THE ROCK:**\n`;
-      mockAssessment += `Hey there, I see you're on a fitness journey! Your BMI is currently ${bmi}, and you're looking to ${isWeightLoss ? 'lose' : 'gain'} about ${Math.abs(weightDiff)}kg. That's a great goal, and I KNOW you can do this!\n\n`;
-      mockAssessment += `Listen up, success doesn't happen overnight. It's about CONSISTENCY and HARD WORK. Remember, focus on progress, not perfection. Every day you show up is a win!\n\n`;
-      mockAssessment += `Based on your stats - ${age} years old, ${gender}, ${currentHeight}cm tall, current weight of ${currentWeight}kg with a ${activityLevel} activity level - I've got the perfect workout plan for you:\n\n`;
-      mockAssessment += `WORKOUT PLAN:\n- Monday: Push day (chest, shoulders, triceps) - 4 sets of 8-12 reps\n- Tuesday: 30 min cardio & core\n- Wednesday: Pull day (back & biceps) - 4 sets of 8-12 reps\n- Thursday: Rest or light activity\n- Friday: Leg day (squats, lunges, deadlifts) - 4 sets of 8-12 reps\n- Saturday: Full body HIIT - 20 minutes\n- Sunday: Active recovery - walking or stretching\n\n`;
-      mockAssessment += `Your protein needs to be high to maintain muscle while ${isWeightLoss ? 'losing fat' : 'gaining mass'}. Carbs will fuel your workouts, and healthy fats will support your hormones and recovery. Trust me, stick to these macros and you'll see AMAZING results!\n\n`;
+      mockAssessment += `FOCUS. DISCIPLINE. CONSISTENCY. That's how you'll transform your ${age}-year-old, ${gender} body from ${currentWeight}kg to ${targetWeight}kg.\n\n`;
+      mockAssessment += `YOUR WORKOUT SCHEDULE - NO NEGOTIATION:\n• Monday: PUSH - Chest/shoulders/triceps - 4×10 reps, 60sec rest\n• Tuesday: 35min HIIT cardio + core (4 rounds of 45sec work/15sec rest)\n• Wednesday: PULL - Back/biceps - 4×10 reps, 60sec rest\n• Thursday: Active recovery - 30min walk + stretching\n• Friday: LEGS - Squats/lunges/deadlifts - 4×10 reps, 75sec rest\n• Saturday: 45min steady cardio + mobility work\n• Sunday: FULL REST (but meal prep for the week!)\n\n`;
+      mockAssessment += `THE BOTTOM LINE: Train 5-6 days/week. Progressive overload - add weight or reps each week. Track EVERYTHING. ${isWeightLoss ? "You didn't gain this weight overnight, and you won't lose it overnight." : "Building quality muscle takes time and consistency."} COMMIT to the process!\n\n`;
       
       // Mock macro goals with actual numbers instead of strings
       const mockMacroGoals = {
@@ -146,10 +144,10 @@ router.post('/fitness-assessment', async (req, res) => {
     const systemContent = "You are a fitness expert with two personas: Dwayne 'The Rock' Johnson and Gordon Ramsay. " +
       "Format their names in bold (e.g., **GORDON RAMSAY:**) at the beginning of their sections. " + 
       "Put Gordon Ramsay's section FIRST, followed by The Rock's section. " +
-      "As Gordon Ramsay, provide brutally honest dietary feedback with mild profanity, focusing on realistic changes to help the user reach their target weight. " +
-      "As The Rock, provide motivational fitness advice tailored specifically to help the user reach their target weight. " +
+      "As Gordon Ramsay, provide brutally honest DIETARY feedback focusing on the user's weight goals. Be concise, direct, and incorporate mild profanity. Focus on exactly what foods to eat/avoid with specific portions and meal timing. " +
+      "As The Rock, provide specific WORKOUT advice with exact exercise frequency, sets, reps and rest periods. Be motivational but direct, focusing on consistency and discipline. " +
       "Always include specific macro goals (protein, carbs, fats) in your response and structure them clearly. " +
-      "Clearly segment each section of your response.";
+      "Keep responses sharp, actionable and personality-driven.";
       
     const userContent = `A user with the following profile has requested a fitness assessment:
     - Age: ${age}
@@ -161,26 +159,29 @@ router.post('/fitness-assessment', async (req, res) => {
     
     First section (GORDON RAMSAY):
     - Start with "**GORDON RAMSAY:**" in bold
-    - Give a brutally honest assessment of their current diet based on their stats.
-    - Provide specific, actionable advice on what foods they should eat or avoid to reach their target weight.
-    - Suggest a simple meal plan that aligns with the macro goals and will help them reach their target weight.
-    - Make this section direct and honest, but with realistic advice they can follow.
+    - Focus EXCLUSIVELY on DIET and NUTRITION to help them reach their weight goal
+    - Directly address their need to ${currentWeight > targetWeight ? 'LOSE' : 'GAIN'} ${Math.abs(currentWeight - targetWeight)}kg
+    - Provide exactly THREE clear, actionable diet steps with specific foods to eat and avoid
+    - Include a SPECIFIC meal plan with breakfast, lunch, dinner and snack options
+    - Be direct, brutally honest, and use some mild profanity for emphasis
+    - Keep this section focused on FOOD and DIET only - do not mention exercise
     
     Second section (THE ROCK): 
     - Start with "**THE ROCK:**" in bold
-    - Provide a brief 2-3 line motivational assessment of their current status.
-    - Include 1-2 motivational quotes or phrases to inspire them in their fitness journey.
-    - Suggest a simple weekly workout plan with specific days, types of exercises, and basic parameters.
-    - Calculate and recommend appropriate daily macronutrient goals (protein, carbs, fats) based on their profile.
-    - Explain the rationale behind these recommendations, focusing on how they'll help reach the target weight.
-    - Make this section inspirational but realistic for their goals.
+    - Focus EXCLUSIVELY on EXERCISE and TRAINING to help them reach their weight goal
+    - Provide a SPECIFIC 7-day workout schedule with exact exercises, sets, reps and rest periods
+    - Include direct, motivational language about consistency and discipline
+    - End with a clear bottom-line message about training frequency and commitment
+    - Keep this section focused on WORKOUTS and FITNESS only - do not discuss diet
     
     IMPORTANT: Always format the macro goals in this exact structure in a separate section:
     **MACRO GOALS:**
     Protein: X grams per day
     Carbs: Y grams per day
     Fats: Z grams per day
-    Calories: W calories per day`;
+    Calories: W calories per day
+    
+    CRITICAL: Keep both sections concise, direct and focused on their specific areas - Gordon on diet/nutrition and The Rock on workouts/training.`;
     
     debug('Sending request to OpenAI with model: gpt-3.5-turbo');
     
@@ -363,17 +364,16 @@ router.post('/fitness-assessment', async (req, res) => {
         
         let fallbackAssessment = '';
         
-        // Gordon Ramsay's part (now first)
+        // Gordon Ramsay's part (now first) - Focus on diet and weight
         fallbackAssessment += `**GORDON RAMSAY:**\n`;
-        fallbackAssessment += `Listen to me carefully. Your current diet is probably RUBBISH. You need to focus on quality protein, fresh vegetables, and complex carbs.\n\n`;
-        fallbackAssessment += `Here's a simple meal plan: Breakfast - egg whites with spinach. Lunch - grilled chicken with steamed vegetables. Dinner - baked fish with quinoa. Snacks - Greek yogurt with berries. SIMPLE. EFFECTIVE. NOW GO COOK!\n\n`;
+        fallbackAssessment += `WAKE UP! You need to ${isWeightLoss ? 'lose' : 'gain'} ${Math.abs(weightDiff)}kg and your BMI is ${bmi}. Your current diet is ABSOLUTE GARBAGE!\n\n`;
+        fallbackAssessment += `DO THIS NOW:\n1. Cut ALL processed foods - they're KILLING your progress\n2. Lean proteins with EVERY meal - chicken, fish, eggs\n3. Triple your vegetable intake - greens at EVERY meal\n\nSimple meal plan: Protein + vegetables + small portion of complex carbs. Eat clean 90% of the time. NO EXCUSES!\n\n`;
         
-        // The Rock's part (now second) - Make sure it's not empty/short
+        // The Rock's part - Focus on exercise frequency and concrete steps
         fallbackAssessment += `**THE ROCK:**\n`;
-        fallbackAssessment += `I can see you're serious about your fitness journey! With a BMI of ${bmi}, and wanting to ${isWeightLoss ? 'lose' : 'gain'} ${Math.abs(weightDiff)}kg, I'm here to help you CRUSH those goals!\n\n`;
-        fallbackAssessment += `REMEMBER: It's not about how hard you hit, it's about how hard you can GET hit and keep moving forward. That's how winning is done!\n\n`;
-        fallbackAssessment += `WORKOUT PLAN:\n- 3 days strength training (push/pull/legs)\n- 2 days cardio (moderate intensity)\n- 1 day active recovery\n- 1 day complete rest\n\nStart with what you can do today, then get a little better tomorrow. FOCUS. COMMIT. SUCCEED!\n\n`;
-        fallbackAssessment += `Based on your stats, I've calculated the perfect macros to fuel your transformation. Protein will help build and maintain muscle, carbs will power your workouts, and healthy fats support recovery.\n\n`;
+        fallbackAssessment += `BOTTOM LINE: You're going to ${isWeightLoss ? 'LOSE' : 'GAIN'} those ${Math.abs(weightDiff)}kg with FOCUS and CONSISTENCY. No shortcuts!\n\n`;
+        fallbackAssessment += `YOUR WEEKLY PLAN - NON-NEGOTIABLE:\n• 3-4 days strength training (45-60 min sessions)\n• 2 days cardio (30 min HIIT or 45 min steady state)\n• 1 day active recovery (walking/stretching)\n• 1 day complete rest\n\nPROGRESSIVE OVERLOAD: Add weight or reps each week. Your body adapts, so you must push harder. NO EXCUSES! Track every workout!\n\n`;
+        fallbackAssessment += `REMEMBER: The gym is the easy part. The kitchen is where results happen. Stick to your macros and BE CONSISTENT!\n\n`;
         
         // Fallback macro goals as actual numbers
         const fallbackMacroGoals = {
