@@ -71,14 +71,17 @@ function savePortToFile(port) {
     
     const serverPortFilePath = path.join(dataDir, 'port.txt');
     fs.writeFileSync(serverPortFilePath, port.toString());
+    console.log(`Port ${port} saved to server data: ${serverPortFilePath}`);
     
     // Also save to project root for easier access
     const rootPortFilePath = path.join(__dirname, '..', '..', 'current-port.txt');
     fs.writeFileSync(rootPortFilePath, port.toString());
+    console.log(`Port ${port} saved to project root: ${rootPortFilePath}`);
     
-    console.log(`Port ${port} saved to files: ${serverPortFilePath} and ${rootPortFilePath}`);
+    console.log(`PORT ${port} IS READY FOR USE`);
   } catch (error) {
     console.error('Failed to save port to file:', error.message);
+    throw error; // Rethrow to notify calling code
   }
 }
 
@@ -86,11 +89,14 @@ function savePortToFile(port) {
 if (require.main === module) {
   (async () => {
     try {
+      console.log('Starting port finder utility...');
       const port = await findFreePort();
+      console.log(`Found free port: ${port}`);
       savePortToFile(port);
+      console.log('Port finder utility completed successfully');
       process.exit(0);
     } catch (error) {
-      console.error('Error finding free port:', error.message);
+      console.error('Error in port finder utility:', error.message);
       process.exit(1);
     }
   })();
