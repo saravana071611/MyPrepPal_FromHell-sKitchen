@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import apiClient from '../utils/api';
+import ReactMarkdown from 'react-markdown';
 import '../styles/UserProfilePage.css';
 
 const UserProfilePage = () => {
@@ -17,6 +18,92 @@ const UserProfilePage = () => {
   const [macroGoals, setMacroGoals] = useState(null);
   const [error, setError] = useState('');
   const [formErrors, setFormErrors] = useState({});
+  const [activePersona, setActivePersona] = useState('gordon'); // 'gordon' or 'rock'
+
+  // Function to extract sections from the assessment
+  const extractSections = () => {
+    if (!assessment) return { gordon: '', rock: '', full: '' };
+    
+    // Check if both sections exist
+    const hasGordon = assessment.includes('**GORDON RAMSAY:**');
+    const hasRock = assessment.includes('**THE ROCK:**');
+    const hasMacros = assessment.includes('**MACRO GOALS:**');
+    
+    let gordonSection = '';
+    let rockSection = '';
+    let fullAssessment = assessment;
+    
+    // Extract Gordon's section
+    if (hasGordon && hasRock) {
+      // If both sections exist, extract between Gordon and Rock
+      gordonSection = assessment.split('**GORDON RAMSAY:**')[1].split('**THE ROCK:**')[0].trim();
+    } else if (hasGordon) {
+      // If only Gordon exists, extract from Gordon to end or to macro goals
+      gordonSection = hasMacros 
+        ? assessment.split('**GORDON RAMSAY:**')[1].split('**MACRO GOALS:**')[0].trim()
+        : assessment.split('**GORDON RAMSAY:**')[1].trim();
+    }
+    
+    // Extract Rock's section
+    if (hasRock && hasMacros) {
+      // If Rock and macro goals exist, extract between Rock and Macro Goals
+      rockSection = assessment.split('**THE ROCK:**')[1].split('**MACRO GOALS:**')[0].trim();
+    } else if (hasRock) {
+      // If only Rock exists without macro goals, extract from Rock to the end
+      rockSection = assessment.split('**THE ROCK:**')[1].trim();
+    }
+    
+    // Full assessment without macro goals
+    if (hasMacros) {
+      fullAssessment = assessment.split('**MACRO GOALS:**')[0].trim();
+    }
+    
+    // If Rock's section is empty or very short, generate a default one
+    if (rockSection.length < 30 && gordonSection) {
+      console.log('Generating default Rock section due to missing content');
+      
+      // Get weight goal from Gordon's section
+      const isWeightLoss = gordonSection.toLowerCase().includes('lose weight') || 
+                           gordonSection.toLowerCase().includes('losing weight');
+      
+      // Create a default Rock section
+      rockSection = `Hey there! I'm here to help you on your fitness journey.
+
+Remember: FOCUS. COMMITMENT. RESULTS. That's what it takes to transform your body.
+
+Your WORKOUT PLAN:
+- Monday: Push day (chest, shoulders, triceps) - 4 sets of 8-12 reps
+- Tuesday: 30 min cardio & core
+- Wednesday: Pull day (back & biceps) - 4 sets of 8-12 reps
+- Thursday: Rest or light activity
+- Friday: Leg day (squats, lunges, deadlifts) - 4 sets of 8-12 reps
+- Saturday: Full body HIIT - 20 minutes
+- Sunday: Active recovery - walking or stretching
+
+Stay consistent with both your workouts and nutrition. ${isWeightLoss ? "You will lose that weight" : "You will reach your goals"} if you put in the work every single day!`;
+    }
+    
+    // Log for debugging
+    console.log('Extracted sections:', { 
+      hasGordon, 
+      hasRock, 
+      hasMacros,
+      gordonLength: gordonSection.length,
+      rockLength: rockSection.length,
+      usedFallback: rockSection.length < 30
+    });
+    
+    return { 
+      gordon: gordonSection, 
+      rock: rockSection,
+      full: fullAssessment
+    };
+  };
+
+  // Toggle between Gordon and The Rock
+  const togglePersona = () => {
+    setActivePersona(activePersona === 'gordon' ? 'rock' : 'gordon');
+  };
 
   // Reset form on component mount
   useEffect(() => {
@@ -117,8 +204,23 @@ const UserProfilePage = () => {
       
       console.log('Assessment received:', assessmentResponse.data);
       
+      // Convert macro goals to numbers if they're strings
+      const cleanedMacroGoals = { ...assessmentResponse.data.macroGoals };
+      if (cleanedMacroGoals) {
+        Object.keys(cleanedMacroGoals).forEach(key => {
+          // Convert empty strings or non-numeric values to default numbers
+          if (!cleanedMacroGoals[key] || isNaN(Number(cleanedMacroGoals[key]))) {
+            const defaults = { protein: 130, carbs: 150, fats: 60, calories: 1800 };
+            cleanedMacroGoals[key] = defaults[key] || 0;
+          } else {
+            // Convert strings to numbers
+            cleanedMacroGoals[key] = Number(cleanedMacroGoals[key]);
+          }
+        });
+      }
+      
       setAssessment(assessmentResponse.data.assessment);
-      setMacroGoals(assessmentResponse.data.macroGoals);
+      setMacroGoals(cleanedMacroGoals);
       
     } catch (error) {
       console.error('Error submitting profile:', error);
@@ -286,7 +388,8 @@ const UserProfilePage = () => {
                   <img 
                     src="/images/rock.jpg" 
                     alt="The Rock" 
-                    className="rock-avatar"
+                    className={`rock-avatar ${activePersona === 'rock' ? 'active' : ''}`}
+                    onClick={() => setActivePersona('rock')}
                     onError={(e) => {
                       e.target.onerror = null;
                       e.target.style.display = 'none';
@@ -295,7 +398,8 @@ const UserProfilePage = () => {
                   <img 
                     src="/images/gordon-ramsay.jpg" 
                     alt="Gordon Ramsay" 
-                    className="ramsay-avatar"
+                    className={`ramsay-avatar ${activePersona === 'gordon' ? 'active' : ''}`}
+                    onClick={() => setActivePersona('gordon')}
                     onError={(e) => {
                       e.target.onerror = null;
                       e.target.style.display = 'none';
@@ -303,9 +407,41 @@ const UserProfilePage = () => {
                   />
                 </div>
                 <h2>Your Fitness Assessment</h2>
+                <div className="persona-toggle">
+                  <button 
+                    className={`toggle-btn ${activePersona === 'gordon' ? 'active' : ''}`} 
+                    onClick={() => setActivePersona('gordon')}
+                  >
+                    Gordon Ramsay
+                  </button>
+                  <button 
+                    className={`toggle-btn ${activePersona === 'rock' ? 'active' : ''}`} 
+                    onClick={() => setActivePersona('rock')}
+                  >
+                    The Rock
+                  </button>
+                </div>
               </div>
+              
               <div className="assessment-content">
-                {assessment.split('MACRO_GOALS:')[0]}
+                {activePersona === 'gordon' ? (
+                  <div className="persona-section gordon-section">
+                    <h3 className="persona-heading">GORDON RAMSAY:</h3>
+                    <ReactMarkdown>{extractSections().gordon}</ReactMarkdown>
+                  </div>
+                ) : (
+                  <div className="persona-section rock-section">
+                    <h3 className="persona-heading">THE ROCK:</h3>
+                    <ReactMarkdown>{extractSections().rock}</ReactMarkdown>
+                    {extractSections().rock.length < 10 && (
+                      <div className="missing-content">
+                        <p style={{color: 'orange', marginTop: '15px', fontSize: '0.9rem'}}>
+                          Refreshing The Rock's content... Please try the assessment again if this persists.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
               
               {macroGoals && (
@@ -314,19 +450,19 @@ const UserProfilePage = () => {
                   <div className="macro-goals-grid">
                     <div className="macro-goal-item">
                       <span className="macro-label">Protein</span>
-                      <span className="macro-value">{macroGoals.protein}g</span>
+                      <span className="macro-value">{macroGoals.protein || 0}g</span>
                     </div>
                     <div className="macro-goal-item">
                       <span className="macro-label">Carbs</span>
-                      <span className="macro-value">{macroGoals.carbs}g</span>
+                      <span className="macro-value">{macroGoals.carbs || 0}g</span>
                     </div>
                     <div className="macro-goal-item">
                       <span className="macro-label">Fats</span>
-                      <span className="macro-value">{macroGoals.fats}g</span>
+                      <span className="macro-value">{macroGoals.fats || 0}g</span>
                     </div>
                     <div className="macro-goal-item">
                       <span className="macro-label">Calories</span>
-                      <span className="macro-value">{macroGoals.calories}</span>
+                      <span className="macro-value">{macroGoals.calories || 0}</span>
                     </div>
                   </div>
                 </div>

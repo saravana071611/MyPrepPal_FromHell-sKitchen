@@ -20,9 +20,19 @@ function App() {
 
   // Function to refresh API status
   const refreshApiStatus = async () => {
+    // Set to "Checking..." state to provide immediate visual feedback
+    setApiStatus({
+      openai: 'Checking...',
+      youtube: 'Checking...'
+    });
+    
     try {
+      // Add a small delay to make the checking state visible
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       const response = await apiClient.getApiStatus();
       setApiStatus(response.data);
+      return response.data; // Return data in case caller needs it
     } catch (error) {
       console.error('Error checking API status:', error);
       setApiStatus({
@@ -30,6 +40,7 @@ function App() {
         youtube: 'Disconnected',
         error: error.message
       });
+      return null;
     }
   };
 

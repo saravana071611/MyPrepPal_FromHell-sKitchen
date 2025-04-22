@@ -11,6 +11,7 @@ const LandingPage = ({ apiStatus, refreshApiStatus }) => {
   const [currentQuote, setCurrentQuote] = useState('');
   const [gamePaused, setGamePaused] = useState(false);
   const [difficulty, setDifficulty] = useState(1);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const gameAreaRef = useRef(null);
   const gameIntervalRef = useRef(null);
   const timerIntervalRef = useRef(null);
@@ -209,6 +210,16 @@ const LandingPage = ({ apiStatus, refreshApiStatus }) => {
     };
   }, []);
 
+  // Handle API status refresh with visual feedback
+  const handleRefreshApiStatus = async () => {
+    setIsRefreshing(true);
+    await refreshApiStatus();
+    // Add a small delay to make the refresh action more noticeable
+    setTimeout(() => {
+      setIsRefreshing(false);
+    }, 1000);
+  };
+
   return (
     <div className="landing-page">
       <div className="container">
@@ -278,8 +289,12 @@ const LandingPage = ({ apiStatus, refreshApiStatus }) => {
       <div className="api-status">
         <div className="api-status-header">
           <h4>API Status</h4>
-          <button onClick={refreshApiStatus} className="btn btn-refresh">
-            Refresh
+          <button 
+            onClick={handleRefreshApiStatus} 
+            className={`btn btn-refresh ${isRefreshing ? 'refreshing' : ''}`}
+            disabled={isRefreshing}
+          >
+            {isRefreshing ? 'Refreshing...' : 'Refresh'}
           </button>
         </div>
         <div className="status-indicator">

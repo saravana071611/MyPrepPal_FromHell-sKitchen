@@ -74,19 +74,21 @@ router.post('/fitness-assessment', async (req, res) => {
       
       let mockAssessment = '';
       
-      // The Rock's part
-      mockAssessment += `THE ROCK:\n`;
-      mockAssessment += `Hey there, I see you're on a fitness journey! Your BMI is currently ${bmi}, and you're looking to ${isWeightLoss ? 'lose' : 'gain'} about ${Math.abs(weightDiff)}kg. That's a great goal, and I KNOW you can do this!\n\n`;
-      mockAssessment += `Based on your stats - ${age} years old, ${gender}, ${currentHeight}cm tall, current weight of ${currentWeight}kg with a ${activityLevel} activity level - I've got the perfect macro breakdown for you.\n\n`;
-      mockAssessment += `Your protein needs to be high to maintain muscle while ${isWeightLoss ? 'losing fat' : 'gaining mass'}. Carbs will fuel your workouts, and healthy fats will support your hormones and recovery. Trust me, stick to these macros and you'll see AMAZING results!\n\n`;
-      
-      // Gordon Ramsay's part
-      mockAssessment += `GORDON RAMSAY:\n`;
+      // Gordon Ramsay's part (now first)
+      mockAssessment += `**GORDON RAMSAY:**\n`;
       mockAssessment += `Right, listen to me carefully. Your current diet is probably ABSOLUTE RUBBISH based on these numbers. ${bmi > 25 ? "You're clearly eating too much processed junk!" : bmi < 18.5 ? "You're not eating enough quality food!" : "You need to focus on quality, not just quantity!"}\n\n`;
       mockAssessment += `Here's what you need to do: Cut the bloody processed foods, they're KILLING your progress! Focus on lean proteins - chicken breast, fish, and eggs. FRESH vegetables with every meal. Complex carbs like sweet potatoes and brown rice. And for God's sake, drink more water!\n\n`;
       mockAssessment += `A simple meal plan: Breakfast - egg white omelet with spinach and avocado. Lunch - grilled chicken with roasted vegetables. Dinner - baked salmon with quinoa and steamed broccoli. Snacks - Greek yogurt with berries or a handful of nuts. DONE. SIMPLE. EFFECTIVE. NOW GET COOKING!\n\n`;
       
-      // Mock macro goals
+      // The Rock's part (now second) - Ensure it's substantial
+      mockAssessment += `**THE ROCK:**\n`;
+      mockAssessment += `Hey there, I see you're on a fitness journey! Your BMI is currently ${bmi}, and you're looking to ${isWeightLoss ? 'lose' : 'gain'} about ${Math.abs(weightDiff)}kg. That's a great goal, and I KNOW you can do this!\n\n`;
+      mockAssessment += `Listen up, success doesn't happen overnight. It's about CONSISTENCY and HARD WORK. Remember, focus on progress, not perfection. Every day you show up is a win!\n\n`;
+      mockAssessment += `Based on your stats - ${age} years old, ${gender}, ${currentHeight}cm tall, current weight of ${currentWeight}kg with a ${activityLevel} activity level - I've got the perfect workout plan for you:\n\n`;
+      mockAssessment += `WORKOUT PLAN:\n- Monday: Push day (chest, shoulders, triceps) - 4 sets of 8-12 reps\n- Tuesday: 30 min cardio & core\n- Wednesday: Pull day (back & biceps) - 4 sets of 8-12 reps\n- Thursday: Rest or light activity\n- Friday: Leg day (squats, lunges, deadlifts) - 4 sets of 8-12 reps\n- Saturday: Full body HIIT - 20 minutes\n- Sunday: Active recovery - walking or stretching\n\n`;
+      mockAssessment += `Your protein needs to be high to maintain muscle while ${isWeightLoss ? 'losing fat' : 'gaining mass'}. Carbs will fuel your workouts, and healthy fats will support your hormones and recovery. Trust me, stick to these macros and you'll see AMAZING results!\n\n`;
+      
+      // Mock macro goals with actual numbers instead of strings
       const mockMacroGoals = {
         protein: Math.round(currentWeight * (isWeightLoss ? 2.2 : 1.8)),
         carbs: Math.round(currentWeight * (isWeightLoss ? 2 : 3)),
@@ -94,8 +96,17 @@ router.post('/fitness-assessment', async (req, res) => {
         calories: Math.round(currentWeight * (isWeightLoss ? 22 : 28))
       };
       
+      // Ensure these are numbers, not strings
+      Object.keys(mockMacroGoals).forEach(key => {
+        if (typeof mockMacroGoals[key] !== 'number' || isNaN(mockMacroGoals[key])) {
+          // Set default values if not a valid number
+          const defaults = { protein: 130, carbs: 150, fats: 60, calories: 1800 };
+          mockMacroGoals[key] = defaults[key] || 0;
+        }
+      });
+      
       // Add macro goals to the assessment
-      mockAssessment += `MACRO_GOALS:\n`;
+      mockAssessment += `**MACRO GOALS:**\n`;
       mockAssessment += `Protein: ${mockMacroGoals.protein} grams per day\n`;
       mockAssessment += `Carbs: ${mockMacroGoals.carbs} grams per day\n`;
       mockAssessment += `Fats: ${mockMacroGoals.fats} grams per day\n`;
@@ -133,9 +144,12 @@ router.post('/fitness-assessment', async (req, res) => {
     
     // Construct the prompt
     const systemContent = "You are a fitness expert with two personas: Dwayne 'The Rock' Johnson and Gordon Ramsay. " +
-      "As The Rock, you provide motivational fitness advice. " + 
-      "As Gordon Ramsay, you provide brutally honest dietary feedback with mild profanity. " +
-      "Always include specific macro goals (protein, carbs, fats) in your response and structure them clearly.";
+      "Format their names in bold (e.g., **GORDON RAMSAY:**) at the beginning of their sections. " + 
+      "Put Gordon Ramsay's section FIRST, followed by The Rock's section. " +
+      "As Gordon Ramsay, provide brutally honest dietary feedback with mild profanity, focusing on realistic changes to help the user reach their target weight. " +
+      "As The Rock, provide motivational fitness advice tailored specifically to help the user reach their target weight. " +
+      "Always include specific macro goals (protein, carbs, fats) in your response and structure them clearly. " +
+      "Clearly segment each section of your response.";
       
     const userContent = `A user with the following profile has requested a fitness assessment:
     - Age: ${age}
@@ -145,18 +159,24 @@ router.post('/fitness-assessment', async (req, res) => {
     - Activity Level: ${activityLevel}
     - Target Weight: ${targetWeight}kg
     
-    First part (as The Rock): 
-    - Provide a brief 2-3 line motivational assessment of their current status.
-    - Calculate and recommend appropriate daily macronutrient goals (protein, carbs, fats) based on their profile.
-    - Explain the rationale behind these recommendations using your fitness expertise and motivational tone.
-    
-    Second part (as Gordon Ramsay):
+    First section (GORDON RAMSAY):
+    - Start with "**GORDON RAMSAY:**" in bold
     - Give a brutally honest assessment of their current diet based on their stats.
-    - Provide advice on what foods they should eat or avoid.
-    - Suggest a simple meal plan that aligns with the macro goals.
+    - Provide specific, actionable advice on what foods they should eat or avoid to reach their target weight.
+    - Suggest a simple meal plan that aligns with the macro goals and will help them reach their target weight.
+    - Make this section direct and honest, but with realistic advice they can follow.
     
-    IMPORTANT: Always format the macro goals in this exact structure at the end of your response:
-    MACRO_GOALS:
+    Second section (THE ROCK): 
+    - Start with "**THE ROCK:**" in bold
+    - Provide a brief 2-3 line motivational assessment of their current status.
+    - Include 1-2 motivational quotes or phrases to inspire them in their fitness journey.
+    - Suggest a simple weekly workout plan with specific days, types of exercises, and basic parameters.
+    - Calculate and recommend appropriate daily macronutrient goals (protein, carbs, fats) based on their profile.
+    - Explain the rationale behind these recommendations, focusing on how they'll help reach the target weight.
+    - Make this section inspirational but realistic for their goals.
+    
+    IMPORTANT: Always format the macro goals in this exact structure in a separate section:
+    **MACRO GOALS:**
     Protein: X grams per day
     Carbs: Y grams per day
     Fats: Z grams per day
@@ -178,7 +198,7 @@ router.post('/fitness-assessment', async (req, res) => {
           }
         ],
         max_tokens: 2000, // Increased from 1000 to 2000
-        temperature: 0.7,
+        temperature: 0.3, // Lower temperature for more consistent output
       });
       
       debug('Received response from OpenAI');
@@ -193,7 +213,7 @@ router.post('/fitness-assessment', async (req, res) => {
       
       // Extract the macro goals from the response
       let macroGoals = {};
-      const macroSection = fullAssessment.split('MACRO_GOALS:');
+      const macroSection = fullAssessment.split('**MACRO GOALS:**');
       
       if (macroSection.length > 1) {
         const macroText = macroSection[1].trim();
@@ -202,32 +222,86 @@ router.post('/fitness-assessment', async (req, res) => {
         
         macroLines.forEach(line => {
           if (line.includes('Protein:')) {
-            macroGoals.protein = line.split('Protein:')[1].trim().split(' ')[0];
+            let proteinValue = line.split('Protein:')[1].trim().split(' ')[0];
+            // Remove 'g' if it exists in the value and ensure it's a number
+            proteinValue = proteinValue.replace(/\D/g, '');
+            // Convert to number or use a default value of 130 if empty
+            macroGoals.protein = proteinValue ? parseInt(proteinValue, 10) : 130;
           } else if (line.includes('Carbs:')) {
-            macroGoals.carbs = line.split('Carbs:')[1].trim().split(' ')[0];
+            let carbsValue = line.split('Carbs:')[1].trim().split(' ')[0];
+            // Remove 'g' if it exists in the value and ensure it's a number
+            carbsValue = carbsValue.replace(/\D/g, '');
+            // Convert to number or use a default value of 150 if empty
+            macroGoals.carbs = carbsValue ? parseInt(carbsValue, 10) : 150;
           } else if (line.includes('Fats:')) {
-            macroGoals.fats = line.split('Fats:')[1].trim().split(' ')[0];
+            let fatsValue = line.split('Fats:')[1].trim().split(' ')[0];
+            // Remove 'g' if it exists in the value and ensure it's a number
+            fatsValue = fatsValue.replace(/\D/g, '');
+            // Convert to number or use a default value of 60 if empty
+            macroGoals.fats = fatsValue ? parseInt(fatsValue, 10) : 60;
           } else if (line.includes('Calories:')) {
-            macroGoals.calories = line.split('Calories:')[1].trim().split(' ')[0];
+            let caloriesValue = line.split('Calories:')[1].trim().split(' ')[0];
+            // Ensure it's a number
+            caloriesValue = caloriesValue.replace(/\D/g, '');
+            // Convert to number or use a default value of 1800 if empty
+            macroGoals.calories = caloriesValue ? parseInt(caloriesValue, 10) : 1800;
           }
         });
         
         debug('Extracted macro goals:', macroGoals);
       } else {
-        debug('No macro goals section found in response. Full response:', fullAssessment);
-        // Create default macro goals based on basic calculations if missing
-        const bmi = (currentWeight / ((currentHeight / 100) * (currentHeight / 100))).toFixed(1);
-        const weightDiff = currentWeight - targetWeight;
-        const isWeightLoss = weightDiff > 0;
-        
-        macroGoals = {
-          protein: Math.round(currentWeight * (isWeightLoss ? 2.2 : 1.8)),
-          carbs: Math.round(currentWeight * (isWeightLoss ? 2 : 3)),
-          fats: Math.round(currentWeight * (isWeightLoss ? 0.8 : 1)),
-          calories: Math.round(currentWeight * (isWeightLoss ? 22 : 28))
-        };
-        
-        debug('Using fallback macro goals:', macroGoals);
+        // Try the old format if the new format isn't found
+        const oldMacroSection = fullAssessment.split('MACRO_GOALS:');
+        if (oldMacroSection.length > 1) {
+          const macroText = oldMacroSection[1].trim();
+          debug('Found macro goals section (old format):', macroText);
+          const macroLines = macroText.split('\n');
+          
+          macroLines.forEach(line => {
+            if (line.includes('Protein:')) {
+              let proteinValue = line.split('Protein:')[1].trim().split(' ')[0];
+              // Remove 'g' if it exists in the value and ensure it's a number
+              proteinValue = proteinValue.replace(/\D/g, '');
+              // Convert to number or use a default value of 130 if empty
+              macroGoals.protein = proteinValue ? parseInt(proteinValue, 10) : 130;
+            } else if (line.includes('Carbs:')) {
+              let carbsValue = line.split('Carbs:')[1].trim().split(' ')[0];
+              // Remove 'g' if it exists in the value and ensure it's a number
+              carbsValue = carbsValue.replace(/\D/g, '');
+              // Convert to number or use a default value of 150 if empty
+              macroGoals.carbs = carbsValue ? parseInt(carbsValue, 10) : 150;
+            } else if (line.includes('Fats:')) {
+              let fatsValue = line.split('Fats:')[1].trim().split(' ')[0];
+              // Remove 'g' if it exists in the value and ensure it's a number
+              fatsValue = fatsValue.replace(/\D/g, '');
+              // Convert to number or use a default value of 60 if empty
+              macroGoals.fats = fatsValue ? parseInt(fatsValue, 10) : 60;
+            } else if (line.includes('Calories:')) {
+              let caloriesValue = line.split('Calories:')[1].trim().split(' ')[0];
+              // Ensure it's a number
+              caloriesValue = caloriesValue.replace(/\D/g, '');
+              // Convert to number or use a default value of 1800 if empty
+              macroGoals.calories = caloriesValue ? parseInt(caloriesValue, 10) : 1800;
+            }
+          });
+          
+          debug('Extracted macro goals (old format):', macroGoals);
+        } else {
+          debug('No macro goals section found in response. Full response:', fullAssessment);
+          // Create default macro goals based on basic calculations if missing
+          const bmi = (currentWeight / ((currentHeight / 100) * (currentHeight / 100))).toFixed(1);
+          const weightDiff = currentWeight - targetWeight;
+          const isWeightLoss = weightDiff > 0;
+          
+          macroGoals = {
+            protein: Math.round(currentWeight * (isWeightLoss ? 2.2 : 1.8)),
+            carbs: Math.round(currentWeight * (isWeightLoss ? 2 : 3)),
+            fats: Math.round(currentWeight * (isWeightLoss ? 0.8 : 1)),
+            calories: Math.round(currentWeight * (isWeightLoss ? 22 : 28))
+          };
+          
+          debug('Using fallback macro goals:', macroGoals);
+        }
       }
       
       // Store the macro goals in the user profile
@@ -289,17 +363,19 @@ router.post('/fitness-assessment', async (req, res) => {
         
         let fallbackAssessment = '';
         
-        // The Rock's part
-        fallbackAssessment += `THE ROCK:\n`;
-        fallbackAssessment += `I can see you're serious about your fitness journey! With a BMI of ${bmi}, and wanting to ${isWeightLoss ? 'lose' : 'gain'} ${Math.abs(weightDiff)}kg, I'm here to help you CRUSH those goals!\n\n`;
-        fallbackAssessment += `Based on your stats, I've calculated the perfect macros to fuel your transformation. Protein will help build and maintain muscle, carbs will power your workouts, and healthy fats support recovery.\n\n`;
-        
-        // Gordon Ramsay's part
-        fallbackAssessment += `GORDON RAMSAY:\n`;
+        // Gordon Ramsay's part (now first)
+        fallbackAssessment += `**GORDON RAMSAY:**\n`;
         fallbackAssessment += `Listen to me carefully. Your current diet is probably RUBBISH. You need to focus on quality protein, fresh vegetables, and complex carbs.\n\n`;
         fallbackAssessment += `Here's a simple meal plan: Breakfast - egg whites with spinach. Lunch - grilled chicken with steamed vegetables. Dinner - baked fish with quinoa. Snacks - Greek yogurt with berries. SIMPLE. EFFECTIVE. NOW GO COOK!\n\n`;
         
-        // Fallback macro goals
+        // The Rock's part (now second) - Make sure it's not empty/short
+        fallbackAssessment += `**THE ROCK:**\n`;
+        fallbackAssessment += `I can see you're serious about your fitness journey! With a BMI of ${bmi}, and wanting to ${isWeightLoss ? 'lose' : 'gain'} ${Math.abs(weightDiff)}kg, I'm here to help you CRUSH those goals!\n\n`;
+        fallbackAssessment += `REMEMBER: It's not about how hard you hit, it's about how hard you can GET hit and keep moving forward. That's how winning is done!\n\n`;
+        fallbackAssessment += `WORKOUT PLAN:\n- 3 days strength training (push/pull/legs)\n- 2 days cardio (moderate intensity)\n- 1 day active recovery\n- 1 day complete rest\n\nStart with what you can do today, then get a little better tomorrow. FOCUS. COMMIT. SUCCEED!\n\n`;
+        fallbackAssessment += `Based on your stats, I've calculated the perfect macros to fuel your transformation. Protein will help build and maintain muscle, carbs will power your workouts, and healthy fats support recovery.\n\n`;
+        
+        // Fallback macro goals as actual numbers
         const fallbackMacroGoals = {
           protein: Math.round(currentWeight * (isWeightLoss ? 2.2 : 1.8)),
           carbs: Math.round(currentWeight * (isWeightLoss ? 2 : 3)),
@@ -307,8 +383,17 @@ router.post('/fitness-assessment', async (req, res) => {
           calories: Math.round(currentWeight * (isWeightLoss ? 22 : 28))
         };
         
+        // Ensure these are numbers, not strings
+        Object.keys(fallbackMacroGoals).forEach(key => {
+          if (typeof fallbackMacroGoals[key] !== 'number' || isNaN(fallbackMacroGoals[key])) {
+            // Set default values if not a valid number
+            const defaults = { protein: 130, carbs: 150, fats: 60, calories: 1800 };
+            fallbackMacroGoals[key] = defaults[key] || 0;
+          }
+        });
+        
         // Add macro goals to the fallback assessment
-        fallbackAssessment += `MACRO_GOALS:\n`;
+        fallbackAssessment += `**MACRO GOALS:**\n`;
         fallbackAssessment += `Protein: ${fallbackMacroGoals.protein} grams per day\n`;
         fallbackAssessment += `Carbs: ${fallbackMacroGoals.carbs} grams per day\n`;
         fallbackAssessment += `Fats: ${fallbackMacroGoals.fats} grams per day\n`;

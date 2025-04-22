@@ -67,9 +67,15 @@ try {
 
 // API status endpoint
 app.get('/api/status', async (req, res) => {
+  // Set no-cache headers to ensure fresh status on each request
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  res.set('Expires', '-1');
+  res.set('Pragma', 'no-cache');
+
   const status = {
     openai: 'Disconnected',
-    youtube: 'Disconnected'
+    youtube: 'Disconnected',
+    timestamp: new Date().toISOString() // Add timestamp for debugging
   };
 
   // Test OpenAI API
