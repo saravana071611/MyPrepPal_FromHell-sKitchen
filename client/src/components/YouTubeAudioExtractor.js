@@ -24,19 +24,15 @@ const YouTubeAudioExtractor = () => {
     // Initialize socket connection
     const socket = socketService.connect();
     
-    // Check connection status
-    setConnected(socketService.isConnected());
-    
-    // Set up connection status listeners
-    const unsubscribeConnect = socketService.on('connect', () => {
-      setConnected(true);
-      addLog('Connected to server socket');
-    });
-    
-    const unsubscribeDisconnect = socketService.on('disconnect', () => {
-      setConnected(false);
-      addLog('Disconnected from server socket');
-    });
+    // Setup socket connection monitoring
+    const connectionCheckInterval = setInterval(() => {
+      setConnected(socketService.isConnected());
+      if (socketService.isConnected() && !connected) {
+        addLog('Connected to server socket');
+      } else if (!socketService.isConnected() && connected) {
+        addLog('Disconnected from server socket');
+      }
+    }, 1000);
     
     // Subscribe to audio extraction progress updates
     const unsubscribeProgress = socketService.subscribeToAudioProgress((data) => {
@@ -54,13 +50,18 @@ const YouTubeAudioExtractor = () => {
       }));
     });
     
+    // Check initial connection status
+    setConnected(socketService.isConnected());
+    if (socketService.isConnected()) {
+      addLog('Connected to server socket');
+    }
+    
     // Clean up socket listeners on unmount
     return () => {
-      unsubscribeConnect();
-      unsubscribeDisconnect();
+      clearInterval(connectionCheckInterval);
       unsubscribeProgress();
     };
-  }, []);
+  }, [connected]);
   
   // Auto-scroll logs to bottom
   useEffect(() => {
@@ -77,7 +78,7 @@ const YouTubeAudioExtractor = () => {
     }]);
   };
   
-  // Start audio extraction
+  // Start audio extraction via the API
   const startExtraction = async () => {
     if (!videoUrl) {
       addLog('Error: Please enter a YouTube URL');
@@ -136,6 +137,38 @@ const YouTubeAudioExtractor = () => {
     }
   };
   
+  // Test function to simulate extraction via direct socket event
+  const testExtraction = () => {
+    if (!videoUrl) {
+      addLog('Error: Please enter a YouTube URL');
+      return;
+    }
+    
+    if (!socketService.isConnected()) {
+      addLog('Error: Socket not connected');
+      return;
+    }
+    
+    // Reset status
+    setExtractionStatus({
+      inProgress: true,
+      stage: 'initializing',
+      progress: 0,
+      message: 'Starting test extraction...',
+      error: null,
+      audioPath: null,
+      title: ''
+    });
+    
+    addLog(`Starting test extraction for: ${videoUrl}`);
+    
+    // Get the socket instance
+    const socket = socketService.connect();
+    
+    // Emit the test event
+    socket.emit('startYouTubeExtraction', { videoUrl });
+  };
+  
   // Handle input change
   const handleUrlChange = (e) => {
     setVideoUrl(e.target.value);
@@ -180,6 +213,14 @@ const YouTubeAudioExtractor = () => {
             disabled={!connected || extractionStatus.inProgress || !videoUrl}
           >
             {extractionStatus.inProgress ? 'Extracting...' : 'Extract Audio'}
+          </button>
+          
+          <button 
+            onClick={testExtraction} 
+            disabled={!connected || extractionStatus.inProgress || !videoUrl}
+            className="test-button"
+          >
+            Test Simulation
           </button>
         </div>
       </div>

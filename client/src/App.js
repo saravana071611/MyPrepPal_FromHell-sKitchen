@@ -10,6 +10,7 @@ import UserProfilePage from './components/UserProfilePage';
 import RecipeExtractorPage from './components/RecipeExtractorPage';
 import TestSocketPage from './components/TestSocketPage';
 import RecipeExtractorTester from './components/RecipeExtractorTester';
+import YouTubeAudioExtractor from './components/YouTubeAudioExtractor';
 
 // Styles
 import './styles/App.css';
@@ -62,6 +63,7 @@ function App() {
           <Route path="/recipe-extractor" element={<RecipeExtractorPage />} />
           <Route path="/test-socket" element={<TestSocketPage />} />
           <Route path="/recipe-tester" element={<RecipeExtractorTester />} />
+          <Route path="/youtube-extractor" element={<YouTubeAudioExtractor />} />
         </Routes>
       </main>
       
