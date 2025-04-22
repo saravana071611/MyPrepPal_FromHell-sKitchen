@@ -18,8 +18,8 @@ const log = (...args) => {
   }
 };
 
-// Define server port
-const SERVER_PORT = 5001; // Updated from default 5000 to match current server port
+// Define server port - kept consistent with proxy setting in package.json
+const SERVER_PORT = 5001;
 
 // Determine if we should retry the request
 const shouldRetry = (error) => {
@@ -111,8 +111,21 @@ export const apiClient = {
   },
   
   getRecipeAnalysis: (data) => {
+    console.log('Calling recipe analysis with data:', data);
     return api.post('/api/openai/recipe-analysis', data, {
-      timeout: 90000 // 90 seconds for potentially long OpenAI calls
+      timeout: 120000 // 2 minutes for potentially long OpenAI calls
+    }).catch(error => {
+      console.error('Recipe analysis API error:', error);
+      // Add additional information to the error
+      if (error.response) {
+        console.error('Error response data:', error.response.data);
+        console.error('Error response status:', error.response.status);
+      } else if (error.request) {
+        console.error('No response received from server');
+      } else {
+        console.error('Error setting up request:', error.message);
+      }
+      throw error; // Re-throw for component to handle
     });
   },
   

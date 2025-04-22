@@ -443,12 +443,62 @@ router.post('/fitness-assessment', async (req, res) => {
 // Route to get recipe analysis (Gordon Ramsay persona)
 router.post('/recipe-analysis', async (req, res) => {
   debug('Received recipe analysis request');
+  debug('Request body:', req.body);
   
   try {
-    const { transcript, videoUrl } = req.body;
+    const { transcript, videoUrl, userId } = req.body;
     
-    if (!transcript) {
-      return res.status(400).json({ error: 'Transcript is required for recipe analysis' });
+    // First, try to get the user's macro goals from their profile if userId is provided
+    let userMacroGoals = null;
+    if (userId) {
+      try {
+        const filePath = path.join(PROFILES_DIR, `${userId}.json`);
+        debug('Looking for user profile at:', filePath);
+        if (fs.existsSync(filePath)) {
+          const userProfileRaw = fs.readFileSync(filePath, 'utf8');
+          const userProfile = JSON.parse(userProfileRaw);
+          if (userProfile.macroGoals) {
+            userMacroGoals = userProfile.macroGoals;
+            debug('Retrieved user macro goals from profile:', userMacroGoals);
+          } else {
+            debug('User profile exists but has no macro goals');
+          }
+        } else {
+          debug('User profile does not exist:', filePath);
+          // Generate default macro goals
+          userMacroGoals = {
+            protein: 150,
+            carbs: 200,
+            fats: 65,
+            calories: 2000
+          };
+          debug('Using default macro goals:', userMacroGoals);
+        }
+      } catch (profileError) {
+        debug('Error retrieving user macro goals:', profileError.message);
+        // Create default macro goals
+        userMacroGoals = {
+          protein: 150,
+          carbs: 200,
+          fats: 65,
+          calories: 2000
+        };
+        debug('Using default macro goals after error:', userMacroGoals);
+      }
+    } else {
+      debug('No userId provided, using default macro goals');
+      userMacroGoals = {
+        protein: 150,
+        carbs: 200,
+        fats: 65,
+        calories: 2000
+      };
+    }
+    
+    // Check if we have a transcript, if not and videoUrl is provided, we'll use the video title
+    if (!transcript && !videoUrl) {
+      debug('Missing both transcript and videoUrl in request');
+      return res.status(400).json({ error: 'Either transcript or videoUrl is required for recipe analysis' });
     }
     
     // Check if we have API key
@@ -487,12 +537,137 @@ router.post('/recipe-analysis', async (req, res) => {
           ],
           notes: "This recipe is perfect for meal prep and can be stored in the refrigerator for up to 4 days.",
           nutritionInfo: "Per serving: approximately 320 calories, 32g protein, 15g carbohydrates, 14g fat"
-        }
+        },
+        source: 'mock_data'
       });
     }
     
     debug('Analyzing recipe with OpenAI');
     
+    // If we have no transcript but have a videoUrl, try to get the video title
+    if (!transcript && videoUrl) {
+      debug('No transcript provided, attempting to generate recipe from video title');
+      try {
+        // Try to get video info to extract the title
+        const ytdl = require('ytdl-core');
+        let videoTitle = '';
+        
+        try {
+          debug('Getting video info with ytdl-core:', videoUrl);
+          const videoInfo = await ytdl.getInfo(videoUrl);
+          videoTitle = videoInfo.videoDetails.title;
+          debug('Retrieved video title:', videoTitle);
+        } catch (ytdlError) {
+          debug('Error getting video info with ytdl:', ytdlError.message);
+          // First fallback: Extract video ID from URL and try to construct a cooking-related title
+          const videoId = videoUrl.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i)?.[1];
+          if (videoId) {
+            debug('Extracted video ID:', videoId);
+            videoTitle = `Healthy Meal Prep Recipe (YouTube ID: ${videoId})`;
+          } else {
+            // Second fallback: If we can't even get the video ID, use a generic cooking title
+            debug('Could not extract video ID, using generic title');
+            videoTitle = 'Healthy Meal Prep Recipe';
+          }
+          debug('Using fallback video title:', videoTitle);
+        }
+        
+        // Ensure we have a cooking-related title even if YouTube provided something unrelated
+        if (!videoTitle.toLowerCase().includes('recipe') && 
+            !videoTitle.toLowerCase().includes('cook') && 
+            !videoTitle.toLowerCase().includes('meal') && 
+            !videoTitle.toLowerCase().includes('food')) {
+          // Append cooking context if the title doesn't seem food-related
+          videoTitle += ' - Cooking Recipe';
+          debug('Added cooking context to title:', videoTitle);
+        }
+        
+        // Prepare the prompt for OpenAI using video title instead of transcript
+        const macroGoalsText = userMacroGoals ? 
+          `Protein: ${userMacroGoals.protein}g, Carbs: ${userMacroGoals.carbs}g, Fats: ${userMacroGoals.fats}g, Calories: ${userMacroGoals.calories}` :
+          'A balanced diet suitable for general fitness';
+        
+        debug('Using macro goals for prompt:', macroGoalsText);
+        
+        const titlePrompt = `
+You are a professional chef assistant specializing in recipe creation. Generate a complete meal prep recipe based on the following YouTube video title:
+
+VIDEO TITLE:
+${videoTitle}
+
+USER'S MACRO GOALS:
+${macroGoalsText}
+
+Please create a recipe that:
+1. Matches the theme/style suggested by the video title
+2. Meets or is adjustable to meet the user's macro goals
+3. Is suitable for meal prepping (can be cooked in batch and stored for 4-5 days)
+
+Please organize the recipe in the following JSON format:
+{
+  "title": "Recipe title",
+  "ingredients": ["ingredient 1 with quantities", "ingredient 2 with quantities", ...],
+  "instructions": ["step 1", "step 2", ...],
+  "notes": "Include meal prep instructions and storage recommendations",
+  "nutritionInfo": "Estimated nutrition information per serving that aims to meet the user's macro goals"
+}
+
+Even if the title is vague or not clearly related to cooking, please create a nutritious meal prep recipe that would meet the user's fitness goals.
+Be precise and include quantities and measurements for all ingredients.
+`;
+
+        debug('Sending title-based prompt to OpenAI with model: gpt-4o');
+        // Call OpenAI with the title-based prompt
+        const response = await openai.chat.completions.create({
+          model: "gpt-4o",
+          messages: [
+            {
+              role: "system",
+              content: "You are a professional chef that creates delicious meal prep recipes that meet specific macro goals."
+            },
+            {
+              role: "user",
+              content: titlePrompt
+            }
+          ],
+          temperature: 0.7, // Slightly higher temperature for creativity
+          max_tokens: 1500,
+          response_format: { type: "json_object" }
+        });
+        
+        const content = response.choices[0]?.message?.content || '';
+        
+        debug('Received OpenAI title-based recipe response');
+        debug('Response content length:', content.length);
+        
+        // Parse the JSON response
+        try {
+          const parsedRecipe = JSON.parse(content);
+          debug('Successfully parsed recipe from title-based generation');
+          return res.json({
+            recipe: parsedRecipe,
+            source: 'video_title' // Indicate this was generated from title, not transcript
+          });
+        } catch (parseError) {
+          debug('Error parsing OpenAI title-based response as JSON', parseError);
+          debug('Raw content that failed to parse:', content);
+          return res.status(500).json({ 
+            error: 'Failed to parse recipe information',
+            details: parseError.message
+          });
+        }
+      } catch (titleError) {
+        debug('Error generating recipe from title:', titleError);
+        debug('Error message:', titleError.message);
+        debug('Error stack:', titleError.stack);
+        return res.status(500).json({
+          error: 'Failed to generate recipe from video title',
+          details: titleError.message
+        });
+      }
+    }
+    
+    // If we have a transcript, proceed with normal recipe extraction
     // Prepare the prompt for OpenAI
     const prompt = `
 You are a professional chef assistant specializing in recipe extraction. Extract the complete recipe from the following transcript of a cooking video.
@@ -500,13 +675,18 @@ You are a professional chef assistant specializing in recipe extraction. Extract
 TRANSCRIPT:
 ${transcript}
 
+USER'S MACRO GOALS:
+${userMacroGoals ? 
+  `Protein: ${userMacroGoals.protein}g, Carbs: ${userMacroGoals.carbs}g, Fats: ${userMacroGoals.fats}g, Calories: ${userMacroGoals.calories}` :
+  'Not specified, assume a balanced diet'}
+
 Please organize the recipe in the following JSON format:
 {
   "title": "Recipe title",
   "ingredients": ["ingredient 1", "ingredient 2", ...],
   "instructions": ["step 1", "step 2", ...],
   "notes": "Any additional notes or tips mentioned",
-  "nutritionInfo": "Any nutrition information mentioned"
+  "nutritionInfo": "Any nutrition information mentioned or estimated based on ingredients"
 }
 
 If any section is not mentioned in the transcript, return an empty string or array for that section.
@@ -540,7 +720,8 @@ Be precise and include quantities and measurements when mentioned.
       const parsedRecipe = JSON.parse(content);
       
       return res.json({
-        recipe: parsedRecipe
+        recipe: parsedRecipe,
+        source: 'transcript' // Indicate this was extracted from transcript
       });
     } catch (parseError) {
       debug('Error parsing OpenAI response as JSON', parseError);
@@ -551,7 +732,7 @@ Be precise and include quantities and measurements when mentioned.
     }
     
   } catch (error) {
-    console.error('Error analyzing recipe:', error);
+    debug('Error analyzing recipe:', error);
     return res.status(500).json({
       error: 'Failed to analyze recipe',
       details: error.message

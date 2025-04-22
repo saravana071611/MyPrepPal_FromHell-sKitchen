@@ -1,122 +1,189 @@
 .recipe-extractor {
   max-width: 800px;
   margin: 0 auto;
-  padding: 20px;
-  font-family: Arial, sans-serif;
+  color: var(--light-text);
+}
+
+.recipe-extractor h2 {
+  color: var(--light-text);
+  margin-bottom: 1.5rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.3);
 }
 
 .recipe-form {
-  background-color: #f8f8f8;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  margin-bottom: 20px;
+  background-color: var(--dark-bg);
+  padding: 1rem 1.2rem;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  margin-bottom: 1.5rem;
+  color: var(--light-text);
+}
+
+.recipe-form p {
+  color: var(--light-text);
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
 }
 
 .form-group {
   display: flex;
-  margin-bottom: 15px;
+  margin-bottom: 1rem;
 }
 
 .url-input {
   flex: 1;
-  padding: 10px;
-  border: 1px solid #ddd;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid var(--gray-element);
   border-radius: 4px;
-  font-size: 16px;
+  font-size: 0.95rem;
+  background-color: var(--darker-bg);
+  color: var(--light-text);
+}
+
+.url-input:focus {
+  outline: none;
+  border-color: var(--red-team);
+  box-shadow: 0 0 0 2px rgba(230, 57, 70, 0.2);
 }
 
 .submit-btn {
-  background-color: #4a90e2;
+  background-color: var(--red-team);
   color: white;
   border: none;
   border-radius: 4px;
-  padding: 0 20px;
-  margin-left: 10px;
+  padding: 0 1rem;
+  margin-left: 0.8rem;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 0.95rem;
   transition: background-color 0.3s;
+  font-weight: bold;
 }
 
 .submit-btn:hover {
-  background-color: #3a80d2;
+  background-color: #d32636;
 }
 
 .submit-btn:disabled {
-  background-color: #ccc;
+  background-color: var(--gray-element);
   cursor: not-allowed;
+  opacity: 0.7;
 }
 
 .error-message {
-  color: #d9534f;
-  margin: 10px 0;
-  padding: 10px;
-  background-color: #ffefef;
-  border: 1px solid #ffcbcb;
+  color: var(--red-team);
+  margin: 0.6rem 0;
+  padding: 0.6rem 0.8rem;
+  background-color: rgba(230, 57, 70, 0.1);
+  border: 1px solid rgba(230, 57, 70, 0.3);
   border-radius: 4px;
+  font-size: 0.9rem;
 }
 
 .loading-indicator {
-  margin: 15px 0;
+  margin: 1rem 0;
+  color: var(--light-text);
+  font-size: 0.9rem;
 }
 
 .progress-bar-container {
-  height: 10px;
-  background-color: #f1f1f1;
-  border-radius: 5px;
-  margin-top: 10px;
+  height: 8px;
+  background-color: var(--gray-element);
+  border-radius: 4px;
+  margin-top: 0.6rem;
   overflow: hidden;
 }
 
 .progress-bar {
   height: 100%;
-  background-color: #4caf50;
+  background-color: var(--red-team);
   transition: width 0.3s ease;
 }
 
 .video-info {
-  margin: 20px 0;
-  padding: 15px;
-  background-color: #fff;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  margin: 1.2rem 0;
+  padding: 1rem;
+  background-color: var(--dark-bg);
+  border: 1px solid var(--gray-element);
+  border-radius: 6px;
+  color: var(--light-text);
+}
+
+.video-info h3 {
+  color: var(--accent-color);
+  margin-top: 0;
+  margin-bottom: 0.6rem;
+  font-size: 1.2rem;
 }
 
 .thumbnail {
   display: flex;
   justify-content: center;
-  margin-top: 15px;
+  margin-top: 1rem;
 }
 
 .recipe-result {
-  margin-top: 30px;
+  margin-top: 1.5rem;
+}
+
+.recipe-result h3 {
+  color: var(--red-team);
+  margin-bottom: 1rem;
+  font-size: 1.3rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
 .recipe-section {
-  margin-bottom: 20px;
-  padding: 15px;
-  background-color: #fff;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  margin-bottom: 1.2rem;
+  padding: 1rem;
+  background-color: var(--dark-bg);
+  border: 1px solid var(--gray-element);
+  border-radius: 6px;
+  color: var(--light-text);
 }
 
 .recipe-section h4 {
   margin-top: 0;
-  color: #333;
-  border-bottom: 1px solid #eee;
-  padding-bottom: 10px;
+  color: var(--accent-color);
+  border-bottom: 1px solid var(--gray-element);
+  padding-bottom: 0.6rem;
+  margin-bottom: 0.8rem;
+  font-size: 1.1rem;
+}
+
+.recipe-section ul, .recipe-section ol {
+  padding-left: 1.5rem;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.recipe-section li {
+  margin-bottom: 0.5rem;
+  line-height: 1.4;
+  font-size: 0.95rem;
 }
 
 .transcript {
-  margin-top: 30px;
+  margin-top: 1.5rem;
+}
+
+.transcript h3 {
+  color: var(--red-team);
+  margin-bottom: 1rem;
+  font-size: 1.3rem;
 }
 
 .transcript-text {
   max-height: 300px;
   overflow-y: auto;
-  padding: 15px;
-  background-color: #fff;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  padding: 1rem;
+  background-color: var(--dark-bg);
+  border: 1px solid var(--gray-element);
+  border-radius: 6px;
   white-space: pre-wrap;
+  color: var(--light-text);
+  font-size: 0.9rem;
+  line-height: 1.5;
 } 
