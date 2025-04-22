@@ -4,13 +4,14 @@ const dotenv = require('dotenv');
 const path = require('path');
 const { exec } = require('child_process');
 const fs = require('fs');
+const http = require('http');
 
 // Load environment variables
 dotenv.config();
 
 // Initialize Express app
 const app = express();
-const PORT = process.env.PORT || 5000;
+let PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors());
@@ -108,7 +109,7 @@ app.get('/api/status', async (req, res) => {
       status.youtube = 'Module Error';
     }
   } else {
-    console.log('YouTube API key not provided');
+    console.log('YouTube API not provided');
     status.youtube = 'No API Key';
   }
 
@@ -128,6 +129,38 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+// Function to try starting the server on different ports if the initial one fails
+const startServer = (port) => {
+  const server = http.createServer(app);
+  
+  server.on('error', (e) => {
+    if (e.code === 'EADDRINUSE') {
+      console.error(`Port ${port} is already in use. Trying port ${port + 1}...`);
+      startServer(port + 1);
+    } else {
+      console.error('Server error:', e.message);
+    }
+  });
+  
+  server.listen(port, () => {
+    // Update PORT variable to ensure client can connect to the correct port
+    PORT = port;
+    console.log(`Server running on port ${PORT}`);
+    
+    // Save the port to a file for other scripts to use
+    try {
+      const portFilePath = path.join(__dirname, 'data', 'port.txt');
+      fs.writeFileSync(portFilePath, PORT.toString());
+      console.log(`Port information saved to ${portFilePath}`);
+    } catch (error) {
+      console.error('Failed to save port information:', error.message);
+    }
+    
+    // Optionally update the client's port configuration
+    console.log(`Note for client: API endpoint is http://localhost:${PORT}/api`);
+    console.log(`For detailed API information, run: node api-info.js`);
+  });
+};
+
+// Start the server with our port-switching mechanism
+startServer(PORT);
