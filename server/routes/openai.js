@@ -85,22 +85,15 @@ router.post('/fitness-assessment', async (req, res) => {
       mockAssessment += `If I served what you eat in one of my restaurants, I'd be SHUT DOWN by health authorities! Your diet is an INSULT to proper nutrition and everything I stand for as a chef! It's time to COMPLETELY OVERHAUL your eating habits!\n\n`;
       
       mockAssessment += `FOOD COMMANDMENTS:\n\n`;
-      
-      mockAssessment += `• CUT THE CRAP: No more processed foods - they're DESTROYING your ${age}-year-old body! With your ${activityLevel} activity level, this garbage is SABOTAGING you!\n\n`;
-      
-      mockAssessment += `• PROTEIN IS YOUR SAVIOR: Lean meats, fish, eggs at EVERY meal. For someone ${currentHeight}cm tall, you need quality protein to maintain muscle while you ${isWeightLoss ? 'shed fat' : 'build mass'}!\n\n`;
-      
-      mockAssessment += `• VEGETABLES ARE NON-NEGOTIABLE: Triple your vegetable intake NOW - green vegetables at EVERY meal or don't bother asking for my help again!\n\n`;
+      mockAssessment += `1. CUT THE CRAP: No more processed foods - they're DESTROYING your ${age}-year-old body! With your ${activityLevel} activity level, this garbage is SABOTAGING you!\n\n`;
+      mockAssessment += `2. PROTEIN IS YOUR SAVIOR: Lean meats, fish, eggs at EVERY meal. For someone ${currentHeight}cm tall, you need quality protein to maintain muscle while you ${isWeightLoss ? 'shed fat' : 'build mass'}!\n\n`;
+      mockAssessment += `3. VEGETABLES ARE NON-NEGOTIABLE: Triple your vegetable intake NOW - green vegetables at EVERY meal or don't bother asking for my help again!\n\n`;
       
       mockAssessment += `MEAL PLAN:\n\n`;
-      
-      mockAssessment += `• Breakfast: ${isWeightLoss ? "Egg white omelette with spinach and tomatoes" : "Whole eggs with avocado toast and smoked salmon"}\n\n`;
-      
-      mockAssessment += `• Lunch: Grilled chicken breast, steamed broccoli, ${isWeightLoss ? "¼ cup brown rice" : "1 cup brown rice"}\n\n`;
-      
-      mockAssessment += `• Dinner: Baked salmon, asparagus, ${isWeightLoss ? "small sweet potato" : "large sweet potato"}\n\n`;
-      
-      mockAssessment += `• Snack: Greek yogurt with berries ${isWeightLoss ? "(MEASURE IT PRECISELY!)" : "and a handful of nuts"}\n\n`;
+      mockAssessment += `Breakfast: ${isWeightLoss ? "Egg white omelette with spinach and tomatoes" : "Whole eggs with avocado toast and smoked salmon"}\n\n`;
+      mockAssessment += `Lunch: Grilled chicken breast, steamed broccoli, ${isWeightLoss ? "¼ cup brown rice" : "1 cup brown rice"}\n\n`;
+      mockAssessment += `Dinner: Baked salmon, asparagus, ${isWeightLoss ? "small sweet potato" : "large sweet potato"}\n\n`;
+      mockAssessment += `Snack: Greek yogurt with berries ${isWeightLoss ? "(MEASURE IT PRECISELY!)" : "and a handful of nuts"}\n\n`;
       
       mockAssessment += `NOW GET COOKING AND STOP WASTING MY TIME!\n\n`;
       
@@ -116,20 +109,13 @@ router.post('/fitness-assessment', async (req, res) => {
       mockAssessment += `I don't care what time you have to wake up – 4AM, 5AM – you MAKE THE TIME for your workouts! When I was shooting 14-hour days, I still hit the Iron Paradise at 2AM if that's what it took! That's the level of COMMITMENT you need!\n\n`;
       
       mockAssessment += `WEEKLY WORKOUT SCHEDULE:\n\n`;
-      
-      mockAssessment += `• Monday - PUSH DAY: Chest/shoulders/triceps - 4×10 reps, 60sec rest\n\n`;
-      
-      mockAssessment += `• Tuesday - CARDIO: 35min HIIT intervals (30sec work/30sec rest)\n\n`;
-      
-      mockAssessment += `• Wednesday - PULL DAY: Back/biceps - 4×10 reps, 60sec rest\n\n`;
-      
-      mockAssessment += `• Thursday - RECOVERY: 30min walk + 15min stretching\n\n`;
-      
-      mockAssessment += `• Friday - LEG DAY: Squats/lunges/deadlifts - 4×10 reps, 75sec rest\n\n`;
-      
-      mockAssessment += `• Saturday - CARDIO: 45min steady state + core work\n\n`;
-      
-      mockAssessment += `• Sunday - REST DAY: Complete recovery (but meal prep for the week!)\n\n`;
+      mockAssessment += `Monday - PUSH DAY: Chest/shoulders/triceps - 4×10 reps, 60sec rest\n\n`;
+      mockAssessment += `Tuesday - CARDIO: 35min HIIT intervals (30sec work/30sec rest)\n\n`;
+      mockAssessment += `Wednesday - PULL DAY: Back/biceps - 4×10 reps, 60sec rest\n\n`;
+      mockAssessment += `Thursday - RECOVERY: 30min walk + 15min stretching\n\n`;
+      mockAssessment += `Friday - LEG DAY: Squats/lunges/deadlifts - 4×10 reps, 75sec rest\n\n`;
+      mockAssessment += `Saturday - CARDIO: 45min steady state + core work\n\n`;
+      mockAssessment += `Sunday - REST DAY: Complete recovery (but meal prep for the week!)\n\n`;
       
       mockAssessment += `THE BOTTOM LINE: Given your ${activityLevel} lifestyle, you MUST train 5-6 days/week. Add weight or reps each week - PROGRESSIVE OVERLOAD! At ${currentHeight}cm tall with a goal weight of ${targetWeight}kg, consistency is your best friend. NO SHORTCUTS, NO EXCUSES - JUST RESULTS!\n\n`;
       
@@ -479,13 +465,13 @@ That's the level of COMMITMENT you need! Are you ready to do the work? Because T
 
 WEEKLY WORKOUT SCHEDULE:
 
-1. MONDAY: CHEST & TRICEPS - Heavy bench press, incline dumbbell press, chest flys, tricep dips
-2. TUESDAY: BACK & BICEPS - Deadlifts, rows, pull-ups, hammer curls
-3. WEDNESDAY: CARDIO & CORE - 30 min HIIT, abdominal circuit, planks, medicine ball work
-4. THURSDAY: SHOULDERS & LEGS - Military press, squats, lunges, calf raises
-5. FRIDAY: FULL BODY CIRCUIT - Compound movements, minimal rest periods
-6. SATURDAY: ACTIVE RECOVERY - Light cardio, stretching, mobility work
-7. SUNDAY: REST - But meal prep for the entire week! NO EXCUSES!
+MONDAY: CHEST & TRICEPS - Heavy bench press, incline dumbbell press, chest flys, tricep dips
+TUESDAY: BACK & BICEPS - Deadlifts, rows, pull-ups, hammer curls
+WEDNESDAY: CARDIO & CORE - 30 min HIIT, abdominal circuit, planks, medicine ball work
+THURSDAY: SHOULDERS & LEGS - Military press, squats, lunges, calf raises
+FRIDAY: FULL BODY CIRCUIT - Compound movements, minimal rest periods
+SATURDAY: ACTIVE RECOVERY - Light cardio, stretching, mobility work
+SUNDAY: REST - But meal prep for the entire week! NO EXCUSES!
 
 FINAL WORD:
 
