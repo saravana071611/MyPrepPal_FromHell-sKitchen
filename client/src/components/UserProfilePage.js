@@ -106,6 +106,9 @@ const UserProfilePage = () => {
       
       console.log('Profile saved:', profileResponse.data);
       
+      // Save userId to localStorage for use in the RecipeExtractorPage
+      localStorage.setItem('userId', userId);
+      
       // Then, get AI assessment
       const assessmentResponse = await axios.post('/api/openai/fitness-assessment', {
         userId, // Pass userId to update profile with macro goals
