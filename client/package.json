@@ -52,5 +52,5 @@
       "axios": "<rootDir>/node_modules/axios/dist/axios.js"
     }
   },
-  "proxy": "http://localhost:5000"
+  "proxy": "http://localhost:5001"
 }

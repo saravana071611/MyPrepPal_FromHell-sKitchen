@@ -18,6 +18,9 @@ const log = (...args) => {
   }
 };
 
+// Define server port
+const SERVER_PORT = 5001; // Updated from default 5000 to match current server port
+
 // Determine if we should retry the request
 const shouldRetry = (error) => {
   // Retry on network errors or 5xx errors
