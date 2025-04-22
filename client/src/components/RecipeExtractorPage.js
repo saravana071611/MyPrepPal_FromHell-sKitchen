@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import apiClient from '../utils/api';
+import { socketService } from '../utils/socket';
 import '../styles/RecipeExtractorPage.css';
 
 // Format time in minutes and seconds
@@ -13,38 +14,58 @@ const formatTime = (seconds) => {
 
 // Processing status component to show timer and progress
 const ProcessingStatus = ({ 
-  stage, 
+  processingStage, 
   elapsedTime, 
   estimatedTimeRemaining, 
   progressPercent 
 }) => {
+  // Add descriptive messages for each processing stage
+  const stageDescriptions = {
+    'fetching': 'Fetching video data from YouTube...',
+    'extracting': 'Extracting and processing the video transcript...',
+    'analyzing': 'Analyzing recipe content with AI...',
+    'formatting': 'Formatting the recipe for display...'
+  };
+
+  // Get the description or use a default message
+  const stageDescription = stageDescriptions[processingStage] || 'Processing your request...';
+  
+  // Format stage for display, handling undefined case
+  const displayStage = processingStage 
+    ? processingStage.charAt(0).toUpperCase() + processingStage.slice(1)
+    : 'Processing';
+  
   return (
     <div className="processing-status">
       <div className="progress-info">
         <div className="stage-info">
-          <span className="stage-label">Status:</span>
-          <span className="stage-value">{stage || 'Processing...'}</span>
+          <span className="stage-label">Current Stage:</span>
+          <span className="stage-value">{displayStage}</span>
         </div>
-        
+        <div className="stage-description">
+          {stageDescription}
+        </div>
         <div className="time-info">
           <div className="elapsed-time">
             <span className="time-label">Elapsed:</span>
             <span className="time-value">{formatTime(elapsedTime)}</span>
           </div>
-          
-          {estimatedTimeRemaining !== null && (
+          {estimatedTimeRemaining > 0 && (
             <div className="remaining-time">
-              <span className="time-label">Estimated time remaining:</span>
+              <span className="time-label">Estimated Time Remaining:</span>
               <span className="time-value">{formatTime(estimatedTimeRemaining)}</span>
             </div>
           )}
         </div>
       </div>
-      
       <div className="progress-bar-container">
         <div 
           className="progress-bar" 
           style={{ width: `${progressPercent}%` }}
+          aria-valuenow={progressPercent}
+          aria-valuemin="0"
+          aria-valuemax="100"
+          role="progressbar"
         ></div>
       </div>
     </div>
@@ -310,7 +331,81 @@ const RecipeExtractorPage = () => {
     }
   };
 
-  // Extract audio and transcribe
+  // Set up socket connection and listeners
+  useEffect(() => {
+    // Connect to socket.io
+    socketService.connect();
+    
+    // Set up listener for audio extraction progress
+    const unsubscribeAudio = socketService.subscribeToAudioProgress((data) => {
+      console.log('Audio extraction progress:', data);
+      
+      if (data.stage === 'error') {
+        setError(data.message || 'Error during audio extraction');
+        stopProcessingTimer();
+        setLoading(false);
+        return;
+      }
+      
+      // Map socket progress stages to our UI stages
+      const stageMap = {
+        'initialized': { stage: 'Preparing to extract audio', percent: 0 },
+        'info': { stage: 'Fetching video information', percent: 10 },
+        'download': { stage: 'Downloading audio from YouTube', percent: data.progress || 20 },
+        'processing': { stage: 'Processing audio file', percent: data.progress || 80 },
+        'completed': { stage: 'Audio extraction complete', percent: 100 }
+      };
+      
+      const mappedStage = stageMap[data.stage] || { stage: data.message || 'Processing', percent: data.progress || 50 };
+      
+      // Update processing stage and progress
+      updateProcessingStage(mappedStage.stage, mappedStage.percent);
+      
+      // Audio extraction progress will be shown, but we won't automatically proceed to transcription
+      // The extractAudioAndTranscribe function will handle the API call for transcription
+    });
+    
+    // Add listener for transcription progress updates
+    const unsubscribeTranscription = socketService.subscribeToTranscriptionProgress((data) => {
+      console.log('Transcription progress:', data);
+      
+      if (data.stage === 'error') {
+        setError(data.message || 'Error during transcription');
+        stopProcessingTimer();
+        setLoading(false);
+        return;
+      }
+      
+      // Map socket progress stages to our UI stages
+      const stageMap = {
+        'initialized': { stage: 'Starting transcription', percent: 60 },
+        'processing': { stage: 'Transcribing audio', percent: data.progress || 70 },
+        'finalizing': { stage: 'Finalizing transcription', percent: 90 },
+        'completed': { stage: 'Transcription complete', percent: 100 }
+      };
+      
+      const mappedStage = stageMap[data.stage] || { stage: data.message || 'Processing transcription', percent: data.progress || 75 };
+      
+      // Update processing stage and progress
+      updateProcessingStage(mappedStage.stage, mappedStage.percent);
+      
+      // If transcription is complete, update the UI
+      if (data.stage === 'completed' && data.transcript) {
+        setTranscript(data.transcript);
+        setStep(3);
+        stopProcessingTimer(true);
+        setLoading(false);
+      }
+    });
+    
+    // Clean up socket listeners on component unmount
+    return () => {
+      unsubscribeAudio();
+      unsubscribeTranscription();
+    };
+  }, []);
+
+  // Extract audio and transcribe - modified to use socket updates
   const extractAudioAndTranscribe = async () => {
     setLoading(true);
     setError('');
@@ -324,20 +419,13 @@ const RecipeExtractorPage = () => {
     startProcessingTimer(estimatedProcessingTime, 'Preparing to extract audio');
     
     try {
-      // Step 1: Extract audio
-      updateProcessingStage('Downloading audio from YouTube', 10);
-      const extractResponse = await apiClient.extractAudio(videoUrl);
+      // Kick off the audio extraction process - progress will be tracked via socket.io
+      await apiClient.extractAudio(videoUrl);
       
-      // Step 2: Transcribe audio
-      updateProcessingStage('Transcribing audio to text', 50);
-      const transcribeResponse = await apiClient.transcribeAudio({
-        audioFilePath: extractResponse.data.audioFilePath
-      });
+      // Start the transcription process
+      await apiClient.transcribeAudio({ videoUrl });
       
-      updateProcessingStage('Transcription complete', 100);
-      setTranscript(transcribeResponse.data.transcript);
-      setStep(3);
-      stopProcessingTimer(true);
+      // The socket listeners will handle progress updates for both extraction and transcription
     } catch (error) {
       console.error('Error in audio extraction or transcription:', error);
       let errorMessage = 'Failed to process video. Please try again or choose a different video.';
@@ -348,7 +436,6 @@ const RecipeExtractorPage = () => {
       
       setError(errorMessage);
       stopProcessingTimer();
-    } finally {
       setLoading(false);
     }
   };
@@ -431,6 +518,55 @@ const RecipeExtractorPage = () => {
     getRecipeAnalysis();
   };
 
+  // Update the updateProcessingTimer function for better time estimation
+  const updateProcessingTimer = useCallback(() => {
+    if (!processStartTime) return;
+    
+    const now = Date.now();
+    const elapsed = now - processStartTime;
+    setElapsedTime(elapsed);
+    
+    // Update remaining time based on the current stage
+    let baseTime = 30000; // Default base time for estimation
+    let multiplier = 1;
+    
+    switch(processingStage) {
+      case 'fetching':
+        multiplier = 0.5;
+        break;
+      case 'extracting':
+        multiplier = 0.8;
+        break;
+      case 'analyzing':
+        multiplier = 1.5;
+        break;
+      case 'formatting':
+        multiplier = 0.3;
+        break;
+      default:
+        multiplier = 1;
+    }
+    
+    const estimatedTotal = baseTime * multiplier;
+    const remaining = Math.max(0, estimatedTotal - elapsed);
+    setEstimatedTimeRemaining(remaining);
+    
+    // Calculate progress more intelligently based on stages
+    let progress = 0;
+    
+    if (processingStage === 'fetching') {
+      progress = Math.min(90, (elapsed / (baseTime * 0.5)) * 25);
+    } else if (processingStage === 'extracting') {
+      progress = 25 + Math.min(65, (elapsed / (baseTime * 0.8)) * 30);
+    } else if (processingStage === 'analyzing') {
+      progress = 55 + Math.min(35, (elapsed / (baseTime * 1.5)) * 35);
+    } else if (processingStage === 'formatting') {
+      progress = 90 + Math.min(10, (elapsed / (baseTime * 0.3)) * 10);
+    }
+    
+    setProgressPercent(Math.min(99, progress)); // Cap at 99% until complete
+  }, [processStartTime, processingStage]);
+
   // Render different content based on current step
   const renderStepContent = () => {
     switch (step) {
@@ -458,6 +594,7 @@ const RecipeExtractorPage = () => {
                 </div>
                 <div className="form-hint">
                   <p>Example: <a href="#" onClick={(e) => {e.preventDefault(); setVideoUrl('https://www.youtube.com/watch?v=Cyskqnp1j64');}}><i className="fas fa-link"></i> Gordon Ramsay's Recipe</a></p>
+                  <p>Try this: <a href="#" onClick={(e) => {e.preventDefault(); setVideoUrl('https://www.youtube.com/watch?v=yRg1lY98bxE');}}><i className="fas fa-link"></i> Alternative Recipe Video</a></p>
                   <p className="hint-details">Supported formats: youtube.com/watch?v=ID, youtu.be/ID, youtube.com/shorts/ID</p>
                 </div>
               </div>
@@ -474,7 +611,7 @@ const RecipeExtractorPage = () => {
                 <div className="loading-message">
                   <p>Please wait while we check the video information...</p>
                   <ProcessingStatus 
-                    stage={processingStage}
+                    processingStage={processingStage}
                     elapsedTime={elapsedTime}
                     estimatedTimeRemaining={estimatedTimeRemaining}
                     progressPercent={progressPercent}
@@ -529,7 +666,7 @@ const RecipeExtractorPage = () => {
               <div className="loading-message">
                 <p>Please wait while we extract and transcribe the audio...</p>
                 <ProcessingStatus 
-                  stage={processingStage}
+                  processingStage={processingStage}
                   elapsedTime={elapsedTime}
                   estimatedTimeRemaining={estimatedTimeRemaining}
                   progressPercent={progressPercent}
@@ -575,7 +712,7 @@ const RecipeExtractorPage = () => {
               <div className="loading-message">
                 <p>Please wait while Gordon Ramsay analyzes your recipe...</p>
                 <ProcessingStatus 
-                  stage={processingStage}
+                  processingStage={processingStage}
                   elapsedTime={elapsedTime}
                   estimatedTimeRemaining={estimatedTimeRemaining}
                   progressPercent={progressPercent}

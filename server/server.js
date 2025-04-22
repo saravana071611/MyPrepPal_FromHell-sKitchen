@@ -5,6 +5,7 @@ const path = require('path');
 const { exec } = require('child_process');
 const fs = require('fs');
 const http = require('http');
+const socketIo = require('socket.io');
 
 // Load environment variables
 dotenv.config();
@@ -64,6 +65,29 @@ try {
   console.error('Error reading port file:', error.message);
   console.log(`Using default port: ${PORT}`);
 }
+
+// Create HTTP server with the Express app
+const server = http.createServer(app);
+
+// Initialize Socket.IO with CORS settings
+const io = socketIo(server, {
+  cors: {
+    origin: '*',
+    methods: ['GET', 'POST']
+  }
+});
+
+// Socket.IO connection handler
+io.on('connection', (socket) => {
+  console.log('New client connected');
+  
+  socket.on('disconnect', () => {
+    console.log('Client disconnected');
+  });
+});
+
+// Make io accessible to route handlers
+app.set('io', io);
 
 // API status endpoint
 app.get('/api/status', async (req, res) => {
@@ -159,7 +183,7 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 // Updated function to try starting the server on different ports if the initial one fails
-const startServer = async (port) => {
+const startServer = async (port, server) => {
   try {
     console.log(`Attempting to start server on port ${port}...`);
     
@@ -174,7 +198,6 @@ const startServer = async (port) => {
     
     // Create and start the server
     console.log(`Creating server on port ${port}...`);
-    const server = http.createServer(app);
     
     server.on('error', (e) => {
       console.error('Server error:', e.message);
@@ -204,7 +227,7 @@ const startServer = async (port) => {
           
           console.log(`API endpoint is http://localhost:${PORT}/api`);
           console.log(`For detailed API information, run: node api-info.js`);
-          resolve(server);
+          resolve(port);
         });
       } catch (listenError) {
         console.error('Error while starting server:', listenError.message);
@@ -221,8 +244,8 @@ const startServer = async (port) => {
 (async () => {
   try {
     console.log('Starting server...');
-    const server = await startServer(PORT);
-    console.log('Server started successfully!');
+    const port = await startServer(PORT, server);
+    console.log(`Server started successfully on port ${port}!`);
     
     // Handle process termination
     process.on('SIGINT', () => {

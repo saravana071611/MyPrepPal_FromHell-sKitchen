@@ -197,9 +197,20 @@ async function fetchVideoInfoFallback(videoId) {
 router.post('/extract-audio', async (req, res) => {
   try {
     const { videoUrl } = req.body;
+    const io = req.app.get('io');
+    const socketId = req.body.socketId;
     
     if (!videoUrl) {
       return res.status(400).json({ error: 'YouTube URL is required' });
+    }
+    
+    // Emit initial progress update
+    if (socketId) {
+      io.to(socketId).emit('audioExtractionProgress', {
+        stage: 'initialized',
+        progress: 0,
+        message: 'Starting audio extraction...'
+      });
     }
     
     const outputDir = path.join(__dirname, '../temp');
@@ -213,9 +224,30 @@ router.post('/extract-audio', async (req, res) => {
     const timestamp = new Date().getTime();
     const outputFilePath = path.join(outputDir, `audio_${timestamp}.mp3`);
     
+    // Emit progress update - getting video info
+    if (socketId) {
+      io.to(socketId).emit('audioExtractionProgress', {
+        stage: 'info',
+        progress: 10,
+        message: 'Fetching video information...'
+      });
+    }
+    
     // Get video info
     const videoInfo = await ytdl.getInfo(videoUrl);
     const title = videoInfo.videoDetails.title;
+    const videoLengthSeconds = parseInt(videoInfo.videoDetails.lengthSeconds) || 300;
+    
+    // Emit progress update - starting download
+    if (socketId) {
+      io.to(socketId).emit('audioExtractionProgress', {
+        stage: 'download',
+        progress: 20,
+        message: 'Starting audio download...',
+        title: title,
+        lengthSeconds: videoLengthSeconds
+      });
+    }
     
     // Download and convert to mp3
     const stream = ytdl(videoUrl, { 
@@ -223,17 +255,61 @@ router.post('/extract-audio', async (req, res) => {
       filter: 'audioonly' 
     });
     
+    let downloadProgress = 0;
+    let lastProgressUpdate = 0;
+    
+    stream.on('progress', (chunkLength, downloaded, total) => {
+      // Calculate progress percentage
+      downloadProgress = Math.floor((downloaded / total) * 100);
+      
+      // Only emit progress updates if progress changed by at least 5% or every 2 seconds
+      const now = Date.now();
+      if (downloadProgress - lastProgressUpdate >= 5 || now - lastProgressUpdate >= 2000) {
+        lastProgressUpdate = downloadProgress;
+        if (socketId) {
+          io.to(socketId).emit('audioExtractionProgress', {
+            stage: 'download',
+            progress: 20 + (downloadProgress * 0.6), // Map download progress to 20-80% of total progress
+            message: `Downloading audio: ${downloadProgress}%`
+          });
+        }
+      }
+    });
+    
     // Process with ffmpeg
     await new Promise((resolve, reject) => {
       ffmpeg(stream)
         .audioBitrate(128)
         .save(outputFilePath)
+        .on('progress', (progress) => {
+          if (socketId && progress.percent) {
+            io.to(socketId).emit('audioExtractionProgress', {
+              stage: 'processing',
+              progress: 80 + (progress.percent * 0.2), // Map conversion progress to 80-100% of total progress
+              message: `Processing audio: ${Math.floor(progress.percent)}%`
+            });
+          }
+        })
         .on('end', () => {
           console.log(`Downloaded and converted audio: ${title}`);
+          if (socketId) {
+            io.to(socketId).emit('audioExtractionProgress', {
+              stage: 'completed',
+              progress: 100,
+              message: 'Audio extraction completed!'
+            });
+          }
           resolve();
         })
         .on('error', (err) => {
           console.error('Error downloading audio:', err);
+          if (socketId) {
+            io.to(socketId).emit('audioExtractionProgress', {
+              stage: 'error',
+              progress: 0,
+              message: `Error: ${err.message || 'Failed to process audio'}`
+            });
+          }
           reject(err);
         });
     });
@@ -247,6 +323,17 @@ router.post('/extract-audio', async (req, res) => {
     });
   } catch (error) {
     console.error('Error extracting YouTube audio:', error);
+    const io = req.app.get('io');
+    const socketId = req.body.socketId;
+    
+    if (socketId) {
+      io.to(socketId).emit('audioExtractionProgress', {
+        stage: 'error',
+        progress: 0,
+        message: `Error: ${error.message || 'Failed to extract audio'}`
+      });
+    }
+    
     res.status(500).json({ error: 'Failed to extract audio from YouTube video' });
   }
 });

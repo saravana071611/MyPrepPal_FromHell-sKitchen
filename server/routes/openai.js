@@ -689,19 +689,70 @@ Fix these issues and you might actually have something edible that aligns with y
 router.post('/transcribe', async (req, res) => {
   debug('Received transcription request');
   try {
-    const { audioFilePath } = req.body;
+    const { videoUrl, socketId } = req.body;
+    const io = req.app.get('io');
     
-    if (!audioFilePath) {
-      debug('Missing audioFilePath in request');
-      return res.status(400).json({ error: 'Audio file path is required' });
+    if (!videoUrl) {
+      debug('Missing videoUrl in request');
+      if (socketId) {
+        io.to(socketId).emit('transcriptionProgress', {
+          stage: 'error',
+          progress: 0,
+          message: 'Video URL is required for transcription'
+        });
+      }
+      return res.status(400).json({ error: 'Video URL is required for transcription' });
     }
     
-    if (!fs.existsSync(audioFilePath)) {
-      debug('Audio file not found at path:', audioFilePath);
-      return res.status(400).json({ error: 'Audio file not found at the specified path' });
+    // Send initial progress update
+    if (socketId) {
+      io.to(socketId).emit('transcriptionProgress', {
+        stage: 'initialized',
+        progress: 0,
+        message: 'Starting transcription process...'
+      });
     }
     
-    debug('Audio file found at path:', audioFilePath);
+    // Find the extracted audio file based on the video URL
+    // The file should be in the temp directory with a pattern that includes timestamp
+    const tempDir = path.join(__dirname, '../temp');
+    const files = fs.readdirSync(tempDir);
+    
+    // Sort files by creation time (newest first) to get the most recent extraction
+    const audioFiles = files
+      .filter(file => file.startsWith('audio_') && file.endsWith('.mp3'))
+      .map(file => {
+        const filePath = path.join(tempDir, file);
+        const stats = fs.statSync(filePath);
+        return { file, path: filePath, time: stats.mtime.getTime() };
+      })
+      .sort((a, b) => b.time - a.time);
+    
+    if (audioFiles.length === 0) {
+      debug('No audio files found in temp directory');
+      if (socketId) {
+        io.to(socketId).emit('transcriptionProgress', {
+          stage: 'error',
+          progress: 0,
+          message: 'No extracted audio files found. Please extract audio first.'
+        });
+      }
+      return res.status(400).json({ error: 'No extracted audio files found. Please extract audio first.' });
+    }
+    
+    // Use the most recent audio file
+    const audioFilePath = audioFiles[0].path;
+    debug('Using most recent audio file:', audioFilePath);
+    
+    // Update progress - found audio file
+    if (socketId) {
+      io.to(socketId).emit('transcriptionProgress', {
+        stage: 'processing',
+        progress: 20,
+        message: 'Audio file found, starting transcription...'
+      });
+    }
+    
     const fileStats = fs.statSync(audioFilePath);
     debug('Audio file size:', Math.round(fileStats.size / 1024 / 1024 * 100) / 100, 'MB');
     
@@ -726,6 +777,34 @@ For serving, prepare some brown rice or quinoa. This recipe makes about 4-5 port
 
 Store in airtight containers in the refrigerator for up to 4 days. Enjoy your healthy, delicious meal!`;
       
+      // Simulate progress updates
+      if (socketId) {
+        // Simulate processing stages
+        setTimeout(() => {
+          io.to(socketId).emit('transcriptionProgress', {
+            stage: 'processing',
+            progress: 50,
+            message: 'Processing audio...'
+          });
+        }, 1000);
+        
+        setTimeout(() => {
+          io.to(socketId).emit('transcriptionProgress', {
+            stage: 'finalizing',
+            progress: 80,
+            message: 'Finalizing transcription...'
+          });
+        }, 2000);
+        
+        setTimeout(() => {
+          io.to(socketId).emit('transcriptionProgress', {
+            stage: 'completed',
+            progress: 100,
+            message: 'Transcription complete!'
+          });
+        }, 3000);
+      }
+      
       debug('Sending mock transcription response');
       return res.json({ transcript: mockTranscript });
     }
@@ -733,6 +812,15 @@ Store in airtight containers in the refrigerator for up to 4 days. Enjoy your he
     // If we have an API key, proceed with the actual OpenAI call
     debug('Creating readable stream from audio file');
     const audioFile = fs.createReadStream(audioFilePath);
+    
+    // Update progress - sending to OpenAI
+    if (socketId) {
+      io.to(socketId).emit('transcriptionProgress', {
+        stage: 'processing',
+        progress: 40,
+        message: 'Sending audio to OpenAI for transcription...'
+      });
+    }
     
     try {
       debug('Sending request to OpenAI Whisper API');
@@ -746,7 +834,23 @@ Store in airtight containers in the refrigerator for up to 4 days. Enjoy your he
       
       if (!response || !response.text) {
         debug('Invalid response from Whisper API:', response);
+        if (socketId) {
+          io.to(socketId).emit('transcriptionProgress', {
+            stage: 'error',
+            progress: 0,
+            message: 'Received invalid response from Whisper API'
+          });
+        }
         throw new Error('Received invalid response from Whisper API');
+      }
+      
+      // Update progress - transcription complete
+      if (socketId) {
+        io.to(socketId).emit('transcriptionProgress', {
+          stage: 'completed',
+          progress: 100,
+          message: 'Transcription complete!'
+        });
       }
       
       debug('Transcription length:', response.text.length, 'characters');
@@ -773,6 +877,14 @@ Store in airtight containers in the refrigerator for up to 4 days. Enjoy your he
         errorMessage = 'Whisper API rate limit exceeded. Please try again in a few minutes.';
       } else {
         errorMessage = openaiError.message;
+      }
+      
+      if (socketId) {
+        io.to(socketId).emit('transcriptionProgress', {
+          stage: 'error',
+          progress: 0,
+          message: `Error: ${errorMessage}`
+        });
       }
       
       throw new Error(`Whisper API error: ${errorMessage}`);

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { socketService } from './socket';
 
 // Create a custom axios instance with enhanced configuration
 const api = axios.create({
@@ -86,9 +87,19 @@ export const apiClient = {
   },
   
   transcribeAudio: (data) => {
-    return api.post('/api/openai/transcribe', data, {
-      timeout: 120000 // 2 minutes for transcription
-    });
+    // Connect socket and get socket ID if available
+    const socketId = socketService.getSocketId();
+    
+    // Include socket ID in the request for real-time progress updates
+    return api.post('/api/openai/transcribe', 
+      { 
+        ...data,
+        socketId
+      }, 
+      {
+        timeout: 120000 // 2 minutes for transcription
+      }
+    );
   },
   
   // YouTube API calls
@@ -99,9 +110,18 @@ export const apiClient = {
   },
   
   extractAudio: (videoUrl) => {
-    return api.post('/api/youtube/extract-audio', { videoUrl }, {
-      timeout: 180000 // 3 minutes for audio extraction
-    });
+    // Connect socket and get socket ID if available
+    const socketId = socketService.getSocketId();
+    
+    return api.post('/api/youtube/extract-audio', 
+      { 
+        videoUrl,
+        socketId // Include socket ID so server can send progress updates
+      }, 
+      {
+        timeout: 180000 // 3 minutes for audio extraction
+      }
+    );
   },
   
   // User profile API calls
