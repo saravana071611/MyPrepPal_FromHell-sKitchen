@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
 import apiClient from '../utils/api';
 import '../styles/RecipeExtractorPage.css';
 
@@ -12,7 +11,7 @@ const RecipeExtractorPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [step, setStep] = useState(1);
-  const [userId, setUserId] = useState(localStorage.getItem('userId') || null);
+  const userId = localStorage.getItem('userId') || null;
 
   // Load user profile if available
   const loadUserProfile = async () => {
@@ -30,6 +29,7 @@ const RecipeExtractorPage = () => {
   // Load profile on component mount
   useEffect(() => {
     loadUserProfile();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
   // Handle video URL input

@@ -31,17 +31,8 @@ if not exist "server\.env" (
   echo API_TIMEOUT=60000 >> server\.env
 )
 
-:: Set increased timeouts for the server in package.json
-echo Updating server timeout settings...
-cd server
-node -e "const fs=require('fs');const path=require('path');const pjPath=path.join(__dirname,'package.json');const pj=require(pjPath);if(!pj.config)pj.config={};pj.config.timeout=90000;fs.writeFileSync(pjPath,JSON.stringify(pj,null,2));"
-cd ..
-
-:: Add proxy error handling to client package.json
-echo Updating client proxy settings...
-cd client
-node -e "const fs=require('fs');const path=require('path');const pjPath=path.join(__dirname,'package.json');const pj=require(pjPath);pj.proxy='http://localhost:5000';if(!pj.proxyConfig)pj.proxyConfig={changeOrigin:true,timeout:120000};fs.writeFileSync(pjPath,JSON.stringify(pj,null,2));"
-cd ..
+:: Skip package.json modifications for now
+echo Skipping package.json modifications...
 
 :: Start server in a separate window with increased timeout
 echo Starting server on port %PORT% with enhanced error handling...
