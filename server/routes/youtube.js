@@ -6,9 +6,44 @@ const ytdl = require('ytdl-core');
 const ffmpeg = require('fluent-ffmpeg');
 const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
 const axios = require('axios');
+const youtubeDl = require('youtube-dl-exec');
 
 // Set ffmpeg path
 ffmpeg.setFfmpegPath(ffmpegPath);
+
+// Fallback extraction function using youtube-dl-exec
+async function extractAudioWithYoutubeDl(videoUrl, outputFilePath) {
+  try {
+    console.log('Using youtube-dl-exec for extraction');
+    
+    // Create temp filename for the downloaded audio
+    const tempOutputPath = outputFilePath + '.temp';
+    
+    // Execute youtube-dl to download audio directly to mp3
+    await youtubeDl(videoUrl, {
+      extractAudio: true,
+      audioFormat: 'mp3',
+      audioQuality: 0, // Best quality
+      output: tempOutputPath,
+      noCheckCertificate: true,
+      noWarnings: true,
+      preferFreeFormats: true,
+      addHeader: [
+        'referer:youtube.com',
+        'user-agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+      ]
+    });
+    
+    // Rename temp file to final filename
+    fs.renameSync(tempOutputPath, outputFilePath);
+    
+    console.log(`Successfully extracted audio using youtube-dl-exec to: ${outputFilePath}`);
+    return true;
+  } catch (error) {
+    console.error('Error using youtube-dl-exec:', error.message);
+    throw error;
+  }
+}
 
 // Custom wrapper for ytdl to handle errors better
 const safeYtdl = (url, options = {}) => {
@@ -346,72 +381,93 @@ router.post('/extract-audio', async (req, res) => {
       // Download and convert to mp3
       console.log('Starting audio download and conversion...');
       
-      // Create ytdl stream
-      const stream = safeYtdl(videoUrl);
-      
-      let downloadProgress = 0;
-      let lastProgressUpdate = 0;
-      
-      stream.on('progress', (chunkLength, downloaded, total) => {
-        // Calculate progress percentage
-        downloadProgress = Math.floor((downloaded / total) * 100);
+      try {
+        // First attempt with ytdl-core
+        console.log('Attempting extraction with ytdl-core...');
         
-        // Only emit progress updates if progress changed by at least 5% or every 2 seconds
-        const now = Date.now();
-        if (downloadProgress - lastProgressUpdate >= 5 || now - lastProgressUpdate >= 2000) {
-          lastProgressUpdate = downloadProgress;
-          console.log(`Download progress: ${downloadProgress}%`);
-          if (socketId) {
-            io.to(socketId).emit('audioExtractionProgress', {
-              stage: 'download',
-              progress: 20 + (downloadProgress * 0.6), // Map download progress to 20-80% of total progress
-              message: `Downloading audio: ${downloadProgress}%`
-            });
+        // Create ytdl stream
+        const stream = safeYtdl(videoUrl);
+        
+        let downloadProgress = 0;
+        let lastProgressUpdate = 0;
+        
+        stream.on('progress', (chunkLength, downloaded, total) => {
+          // Calculate progress percentage
+          downloadProgress = Math.floor((downloaded / total) * 100);
+          
+          // Only emit progress updates if progress changed by at least 5% or every 2 seconds
+          const now = Date.now();
+          if (downloadProgress - lastProgressUpdate >= 5 || now - lastProgressUpdate >= 2000) {
+            lastProgressUpdate = downloadProgress;
+            console.log(`Download progress: ${downloadProgress}%`);
+            if (socketId) {
+              io.to(socketId).emit('audioExtractionProgress', {
+                stage: 'download',
+                progress: 20 + (downloadProgress * 0.6), // Map download progress to 20-80% of total progress
+                message: `Downloading audio: ${downloadProgress}%`
+              });
+            }
           }
-        }
-      });
-      
-      // Process with ffmpeg
-      await new Promise((resolve, reject) => {
-        ffmpeg(stream)
-          .audioBitrate(128)
-          .save(outputFilePath)
-          .on('progress', (progress) => {
-            if (progress && progress.percent) {
-              console.log(`Processing progress: ${Math.floor(progress.percent)}%`);
+        });
+        
+        // Process with ffmpeg
+        await new Promise((resolve, reject) => {
+          ffmpeg(stream)
+            .audioBitrate(128)
+            .save(outputFilePath)
+            .on('progress', (progress) => {
+              if (progress && progress.percent) {
+                console.log(`Processing progress: ${Math.floor(progress.percent)}%`);
+                if (socketId) {
+                  io.to(socketId).emit('audioExtractionProgress', {
+                    stage: 'processing',
+                    progress: 80 + (progress.percent * 0.2), // Map conversion progress to 80-100% of total progress
+                    message: `Processing audio: ${Math.floor(progress.percent)}%`
+                  });
+                }
+              }
+            })
+            .on('end', () => {
+              console.log(`Downloaded and converted audio: ${title}`);
               if (socketId) {
                 io.to(socketId).emit('audioExtractionProgress', {
-                  stage: 'processing',
-                  progress: 80 + (progress.percent * 0.2), // Map conversion progress to 80-100% of total progress
-                  message: `Processing audio: ${Math.floor(progress.percent)}%`
+                  stage: 'completed',
+                  progress: 100,
+                  message: 'Audio extraction completed!',
+                  audioPath: outputFilePath
                 });
               }
-            }
-          })
-          .on('end', () => {
-            console.log(`Downloaded and converted audio: ${title}`);
-            if (socketId) {
-              io.to(socketId).emit('audioExtractionProgress', {
-                stage: 'completed',
-                progress: 100,
-                message: 'Audio extraction completed!',
-                audioPath: outputFilePath
-              });
-            }
-            resolve();
-          })
-          .on('error', (err) => {
-            console.error('Error in ffmpeg process:', err);
-            if (socketId) {
-              io.to(socketId).emit('audioExtractionProgress', {
-                stage: 'error',
-                progress: 0,
-                message: `Error processing audio: ${err.message || 'Failed to process audio'}`
-              });
-            }
-            reject(err);
+              resolve();
+            })
+            .on('error', (err) => {
+              console.error('Error in ffmpeg process:', err);
+              reject(err);
+            });
+        });
+      } catch (ytdlError) {
+        // If ytdl-core fails, use youtube-dl-exec as fallback
+        console.error('ytdl-core extraction failed:', ytdlError.message);
+        
+        if (socketId) {
+          io.to(socketId).emit('audioExtractionProgress', {
+            stage: 'fallback',
+            progress: 30,
+            message: 'Primary extraction method failed, trying alternative method...'
           });
-      });
+        }
+        
+        // Use our fallback extraction function
+        await extractAudioWithYoutubeDl(videoUrl, outputFilePath);
+        
+        if (socketId) {
+          io.to(socketId).emit('audioExtractionProgress', {
+            stage: 'completed',
+            progress: 100,
+            message: 'Audio extraction completed using fallback method!',
+            audioPath: outputFilePath
+          });
+        }
+      }
       
       console.log('Audio extraction completed successfully');
       
