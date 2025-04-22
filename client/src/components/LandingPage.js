@@ -161,8 +161,8 @@ const LandingPage = ({ apiStatus, refreshApiStatus }) => {
       
       setFoods(prevFoods => [...prevFoods, newFood]);
       
-      // Remove food after a shorter time if not clicked (faster at higher difficulty)
-      const disappearTime = Math.max(1500 - ((difficulty - 1) * 250), 750);
+      // Remove food after 2 seconds if not clicked (faster at higher difficulty)
+      const disappearTime = Math.max(2000 - ((difficulty - 1) * 200), 1000);
       setTimeout(() => {
         setFoods(prevFoods => prevFoods.filter(food => food.id !== id));
       }, disappearTime);
