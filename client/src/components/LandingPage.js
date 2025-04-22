@@ -9,9 +9,12 @@ const LandingPage = ({ apiStatus, refreshApiStatus }) => {
   const [foods, setFoods] = useState([]);
   const [showQuote, setShowQuote] = useState(false);
   const [currentQuote, setCurrentQuote] = useState('');
+  const [gamePaused, setGamePaused] = useState(false);
+  const [difficulty, setDifficulty] = useState(1);
   const gameAreaRef = useRef(null);
   const gameIntervalRef = useRef(null);
   const timerIntervalRef = useRef(null);
+  const difficultyTimerRef = useRef(null);
 
   // Gordon Ramsay's iconic scolding quotes
   const ramsayQuotes = [
@@ -64,11 +67,27 @@ const LandingPage = ({ apiStatus, refreshApiStatus }) => {
   // Start game function
   const startGame = () => {
     setGameActive(true);
+    setGamePaused(false);
     setScore(0);
     setTimeLeft(60);
     setFoods([]);
+    setDifficulty(1);
     
     // Start timer
+    startTimer();
+    
+    // Start spawning foods
+    startFoodSpawning();
+    
+    // Set up difficulty progression
+    difficultyTimerRef.current = setInterval(() => {
+      setDifficulty(prev => Math.min(prev + 1, 5));
+    }, 12000); // Increase difficulty every 12 seconds
+  };
+
+  // Start timer function
+  const startTimer = () => {
+    clearInterval(timerIntervalRef.current);
     timerIntervalRef.current = setInterval(() => {
       setTimeLeft(prevTime => {
         if (prevTime <= 1) {
@@ -80,43 +99,73 @@ const LandingPage = ({ apiStatus, refreshApiStatus }) => {
         return prevTime - 1;
       });
     }, 1000);
-    
-    // Start spawning foods
-    gameIntervalRef.current = setInterval(spawnFood, 1500);
+  };
+
+  // Start food spawning function
+  const startFoodSpawning = () => {
+    clearInterval(gameIntervalRef.current);
+    // Spawn interval decreases as difficulty increases
+    const spawnInterval = Math.max(800 - (difficulty * 100), 300);
+    gameIntervalRef.current = setInterval(spawnFood, spawnInterval);
   };
 
   // Stop game function
   const stopGame = () => {
     clearInterval(timerIntervalRef.current);
     clearInterval(gameIntervalRef.current);
+    clearInterval(difficultyTimerRef.current);
     setGameActive(false);
+    setGamePaused(false);
+  };
+
+  // Pause game function
+  const pauseGame = () => {
+    clearInterval(timerIntervalRef.current);
+    clearInterval(gameIntervalRef.current);
+    setGamePaused(true);
+  };
+
+  // Resume game function
+  const resumeGame = () => {
+    if (gameActive) {
+      setGamePaused(false);
+      startTimer();
+      startFoodSpawning();
+    }
   };
 
   // Spawn a new food item at random position
   const spawnFood = () => {
     if (!gameAreaRef.current) return;
     
-    const gameArea = gameAreaRef.current.getBoundingClientRect();
-    const randomFood = foodItems[Math.floor(Math.random() * foodItems.length)];
-    const id = Date.now();
+    // Determine how many food items to spawn (1-3 based on difficulty)
+    const maxSpawn = Math.min(difficulty, 3);
+    const spawnCount = Math.floor(Math.random() * maxSpawn) + 1;
     
-    const maxX = gameArea.width - 60; // 60px is the food item size
-    const maxY = gameArea.height - 60;
-    
-    const newFood = {
-      ...randomFood,
-      id,
-      x: Math.floor(Math.random() * maxX),
-      y: Math.floor(Math.random() * maxY),
-      rotation: Math.floor(Math.random() * 360)
-    };
-    
-    setFoods(prevFoods => [...prevFoods, newFood]);
-    
-    // Remove food after 3 seconds if not clicked
-    setTimeout(() => {
-      setFoods(prevFoods => prevFoods.filter(food => food.id !== id));
-    }, 3000);
+    for (let i = 0; i < spawnCount; i++) {
+      const gameArea = gameAreaRef.current.getBoundingClientRect();
+      const randomFood = foodItems[Math.floor(Math.random() * foodItems.length)];
+      const id = Date.now() + i; // Ensure unique ID
+      
+      const maxX = gameArea.width - 60; // 60px is the food item size
+      const maxY = gameArea.height - 60;
+      
+      const newFood = {
+        ...randomFood,
+        id,
+        x: Math.floor(Math.random() * maxX),
+        y: Math.floor(Math.random() * maxY),
+        rotation: Math.floor(Math.random() * 360)
+      };
+      
+      setFoods(prevFoods => [...prevFoods, newFood]);
+      
+      // Remove food after 2 seconds if not clicked (faster at higher difficulty)
+      const disappearTime = Math.max(2000 - ((difficulty - 1) * 200), 1000);
+      setTimeout(() => {
+        setFoods(prevFoods => prevFoods.filter(food => food.id !== id));
+      }, disappearTime);
+    }
   };
 
   // Handle food click
@@ -133,18 +182,30 @@ const LandingPage = ({ apiStatus, refreshApiStatus }) => {
       setCurrentQuote(randomQuote);
       setShowQuote(true);
       
-      // Hide quote after 2 seconds
+      // Pause the game while showing the quote
+      pauseGame();
+      
+      // Hide quote after 2 seconds and resume game
       setTimeout(() => {
         setShowQuote(false);
+        resumeGame();
       }, 2000);
     }
   };
+
+  // Update spawn rate when difficulty changes
+  useEffect(() => {
+    if (gameActive && !gamePaused) {
+      startFoodSpawning();
+    }
+  }, [difficulty, gameActive, gamePaused]);
 
   // Clean up on component unmount
   useEffect(() => {
     return () => {
       clearInterval(timerIntervalRef.current);
       clearInterval(gameIntervalRef.current);
+      clearInterval(difficultyTimerRef.current);
     };
   }, []);
 
@@ -186,7 +247,7 @@ const LandingPage = ({ apiStatus, refreshApiStatus }) => {
             </div>
           </div>
           
-          <div className="game-area" ref={gameAreaRef}>
+          <div className={`game-area ${gamePaused ? 'game-paused' : ''}`} ref={gameAreaRef}>
             {foods.map(food => (
               <div
                 key={food.id}
