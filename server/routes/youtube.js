@@ -10,6 +10,31 @@ const axios = require('axios');
 // Set ffmpeg path
 ffmpeg.setFfmpegPath(ffmpegPath);
 
+// Custom wrapper for ytdl to handle errors better
+const safeYtdl = (url, options = {}) => {
+  // Use default options with some custom settings for better compatibility
+  const ytdlOptions = {
+    quality: 'lowestaudio',
+    filter: 'audioonly',
+    requestOptions: {
+      headers: {
+        // Use a recent user agent
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        // Add referer to help with some restrictions
+        'Referer': 'https://www.youtube.com/'
+      }
+    },
+    ...options
+  };
+
+  try {
+    return ytdl(url, ytdlOptions);
+  } catch (error) {
+    console.error('ytdl error:', error.message);
+    throw error;
+  }
+};
+
 // Helper function to extract video ID from various YouTube URL formats
 function extractVideoId(url) {
   // Try standard ytdl-core method first
@@ -240,8 +265,25 @@ router.post('/extract-audio', async (req, res) => {
     let videoInfo;
     try {
       console.log('Fetching video info...');
-      videoInfo = await ytdl.getInfo(videoUrl);
-      console.log('Successfully fetched video info for:', videoInfo.videoDetails.title);
+      try {
+        videoInfo = await ytdl.getInfo(videoUrl);
+        console.log('Successfully fetched video info for:', videoInfo.videoDetails.title);
+      } catch (infoError) {
+        // If standard method fails, try with different options
+        console.log('Standard ytdl.getInfo failed, trying with custom options');
+        const videoId = extractVideoId(videoUrl);
+        const url = `https://www.youtube.com/watch?v=${videoId}`;
+        
+        videoInfo = await ytdl.getInfo(url, {
+          requestOptions: {
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+              'Referer': 'https://www.youtube.com/'
+            }
+          }
+        });
+        console.log('Successfully fetched video info with custom options');
+      }
     } catch (infoError) {
       console.error('Error fetching video info:', infoError.message);
       
@@ -305,10 +347,7 @@ router.post('/extract-audio', async (req, res) => {
       console.log('Starting audio download and conversion...');
       
       // Create ytdl stream
-      const stream = ytdl(videoUrl, { 
-        quality: 'highestaudio',
-        filter: 'audioonly' 
-      });
+      const stream = safeYtdl(videoUrl);
       
       let downloadProgress = 0;
       let lastProgressUpdate = 0;
@@ -495,16 +534,33 @@ router.post('/extract-and-transcribe', async (req, res) => {
       });
     }
     
-    // Get video info with error handling
+    // Get video info with better error handling
     let videoInfo;
     try {
       console.log('Fetching video info...');
-      videoInfo = await ytdl.getInfo(videoUrl);
-      console.log('Successfully fetched video info for:', videoInfo.videoDetails.title);
+      try {
+        videoInfo = await ytdl.getInfo(videoUrl);
+        console.log('Successfully fetched video info for:', videoInfo.videoDetails.title);
+      } catch (infoError) {
+        // If standard method fails, try with different options
+        console.log('Standard ytdl.getInfo failed, trying with custom options');
+        const videoId = extractVideoId(videoUrl);
+        const url = `https://www.youtube.com/watch?v=${videoId}`;
+        
+        videoInfo = await ytdl.getInfo(url, {
+          requestOptions: {
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+              'Referer': 'https://www.youtube.com/'
+            }
+          }
+        });
+        console.log('Successfully fetched video info with custom options');
+      }
     } catch (infoError) {
       console.error('Error fetching video info:', infoError.message);
       
-      // Try fallback method to get video info
+      // Try fallback method
       try {
         const videoId = extractVideoId(videoUrl);
         videoInfo = await fetchVideoInfoFallback(videoId);
@@ -512,23 +568,23 @@ router.post('/extract-and-transcribe', async (req, res) => {
       } catch (fallbackError) {
         console.error('Fallback video info also failed:', fallbackError.message);
         
-        // Create a minimal video info object
+        // Last resort: create minimal info
         videoInfo = { 
           videoDetails: { 
             title: `Unknown Video (${timestamp})`, 
             lengthSeconds: 300,
-            videoId: extractVideoId(videoUrl)
+            videoId: extractVideoId(videoUrl) 
           }
         };
-        console.log('Using minimal fallback video info');
+        console.log('Using minimal video info due to all methods failing');
       }
       
-      // Report warning to client
+      // Report warning but continue
       if (socketId) {
         io.to(socketId).emit('extractionProgress', {
           stage: 'warning',
-          progress: 8,
-          message: `Warning: Could not fetch full video details. Continuing with extraction.`
+          progress: 10,
+          message: `Warning: Video details fetching had issues. Continuing with extraction using limited information.`
         });
       }
     }
@@ -540,20 +596,19 @@ router.post('/extract-and-transcribe', async (req, res) => {
     if (socketId) {
       io.to(socketId).emit('extractionProgress', {
         stage: 'download',
-        progress: 10,
+        progress: 15,
         message: 'Starting audio download...',
         title: title,
         lengthSeconds: videoLengthSeconds
       });
     }
     
-    // Extract audio
     try {
-      // Create ytdl stream
-      const stream = ytdl(videoUrl, { 
-        quality: 'highestaudio',
-        filter: 'audioonly' 
-      });
+      // Download and convert to mp3
+      console.log('Starting audio download and conversion...');
+      
+      // Create ytdl stream with our safer wrapper
+      const stream = safeYtdl(videoUrl);
       
       let downloadProgress = 0;
       let lastProgressUpdate = 0;

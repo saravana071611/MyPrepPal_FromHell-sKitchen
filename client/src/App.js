@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import apiClient from './utils/api';
+import { SocketProvider } from './contexts/SocketContext';
 
 // Components
 import Header from './components/Header';
@@ -53,22 +54,24 @@ function App() {
   }, []);
 
   return (
-    <div className="app">
-      <Header />
-      
-      <main className="main-content">
-        <Routes>
-          <Route path="/" element={<LandingPage apiStatus={apiStatus} refreshApiStatus={refreshApiStatus} />} />
-          <Route path="/profile" element={<UserProfilePage />} />
-          <Route path="/recipe-extractor" element={<RecipeExtractorPage />} />
-          <Route path="/test-socket" element={<TestSocketPage />} />
-          <Route path="/recipe-tester" element={<RecipeExtractorTester />} />
-          <Route path="/youtube-extractor" element={<YouTubeAudioExtractor />} />
-        </Routes>
-      </main>
-      
-      <Footer />
-    </div>
+    <SocketProvider>
+      <div className="app">
+        <Header />
+        
+        <main className="main-content">
+          <Routes>
+            <Route path="/" element={<LandingPage apiStatus={apiStatus} refreshApiStatus={refreshApiStatus} />} />
+            <Route path="/profile" element={<UserProfilePage />} />
+            <Route path="/recipe-extractor" element={<RecipeExtractorPage />} />
+            <Route path="/test-socket" element={<TestSocketPage />} />
+            <Route path="/recipe-tester" element={<RecipeExtractorTester />} />
+            <Route path="/youtube-extractor" element={<YouTubeAudioExtractor />} />
+          </Routes>
+        </main>
+        
+        <Footer />
+      </div>
+    </SocketProvider>
   );
 }
 
