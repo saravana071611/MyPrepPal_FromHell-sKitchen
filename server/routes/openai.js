@@ -177,7 +177,7 @@ router.post('/fitness-assessment', async (req, res) => {
             content: userContent
           }
         ],
-        max_tokens: 1000, // Increased from 800 to 1000
+        max_tokens: 2000, // Increased from 1000 to 2000
         temperature: 0.7,
       });
       
@@ -378,7 +378,7 @@ Fix these issues and you might actually have something edible that aligns with y
     debug('Preparing OpenAI request for recipe analysis');
     
     // Check transcript length and truncate if needed
-    const maxChars = 14000; // Conservative limit to avoid token limit issues
+    const maxChars = 10000; // Reduced from 14000 to 10000 to leave more room for output tokens
     let truncatedTranscript = transcript;
     let truncationNote = '';
     
@@ -420,7 +420,7 @@ Fix these issues and you might actually have something edible that aligns with y
             Keep your feedback entertaining but genuinely helpful.`
           }
         ],
-        max_tokens: 1500, // Increased from 1000 to 1500
+        max_tokens: 3000, // Increased from 1500 to 3000
         temperature: 0.7,
       });
       
