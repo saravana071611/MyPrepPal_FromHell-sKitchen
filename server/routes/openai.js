@@ -439,7 +439,7 @@ Fix these issues and you might actually have something edible that aligns with y
     debug('Preparing OpenAI request for recipe analysis');
     
     // Check transcript length and truncate if needed
-    const maxChars = 10000; // Reduced from 14000 to 10000 to leave more room for output tokens
+    const maxChars = 8000; // Further reduced from 10000 to 8000 to ensure we stay well under token limits
     let truncatedTranscript = transcript;
     let truncationNote = '';
     
@@ -449,41 +449,55 @@ Fix these issues and you might actually have something edible that aligns with y
       truncationNote = `[Note: Transcript was truncated from ${transcript.length} to ${maxChars} characters due to length constraints.]`;
     }
     
-    try {
-      debug('Sending request to OpenAI with model: gpt-3.5-turbo');
-      const response = await openai.chat.completions.create({
-        model: "gpt-3.5-turbo", // Changed from gpt-4 to gpt-3.5-turbo
-        messages: [
-          {
-            role: "system",
-            content: "You are Gordon Ramsay, the famous chef known for your brutally honest feedback, passion for food, and occasional use of mild profanity."
-          },
-          {
-            role: "user",
-            content: `Below is a transcript from a cooking video:
-            ${truncatedTranscript}
+    // Define our retry strategy
+    const attemptAnalysis = async (transcriptText, maxTokens, isRetry = false) => {
+      debug(`${isRetry ? 'RETRY attempt' : 'First attempt'} - Sending request to OpenAI with model: gpt-3.5-turbo`);
+      debug(`Using max_tokens: ${maxTokens}, transcript length: ${transcriptText.length} chars`);
+      
+      const messages = [
+        {
+          role: "system",
+          content: isRetry ? 
+            "You are Gordon Ramsay. Be brief but helpful. Focus on extracting the recipe and essential feedback only." :
+            "You are Gordon Ramsay, the famous chef known for your brutally honest feedback, passion for food, and occasional use of mild profanity."
+        },
+        {
+          role: "user",
+          content: isRetry ?
+            `Extract a recipe from this transcript and give brief cooking advice:\n${transcriptText}` :
+            `Below is a transcript from a cooking video:
+            ${transcriptText}
             ${truncationNote}
-            
-            The user has the following daily macro goals:
-            ${macroGoals}
-            
-            First, extract a clear, detailed recipe from this transcript, including:
-            1. A complete grocery list
-            2. Step-by-step cooking instructions
-            3. How to make 5 meal-prep portions of this dish
-            
-            Then, in your signature Gordon Ramsay style (passionate, occasionally using mild profanity, and brutally honest), 
-            provide feedback on this recipe. Focus on:
-            - How healthy/unhealthy this recipe is
-            - How it could be modified to better meet the user's macro goals
-            - 2-3 specific improvements to make it more nutritious and delicious
-            
-            Keep your feedback entertaining but genuinely helpful.`
-          }
-        ],
-        max_tokens: 3000, // Increased from 1500 to 3000
+          
+          The user has the following daily macro goals:
+          ${macroGoals}
+          
+          First, extract a clear, detailed recipe from this transcript, including:
+          1. A complete grocery list
+          2. Step-by-step cooking instructions
+          3. How to make 5 meal-prep portions of this dish
+          
+          Then, in your signature Gordon Ramsay style (passionate, occasionally using mild profanity, and brutally honest), 
+          provide feedback on this recipe. Focus on:
+          - How healthy/unhealthy this recipe is
+          - How it could be modified to better meet the user's macro goals
+          - 2-3 specific improvements to make it more nutritious and delicious
+          
+          Keep your feedback entertaining but genuinely helpful.`
+        }
+      ];
+      
+      return await openai.chat.completions.create({
+        model: "gpt-3.5-turbo",
+        messages: messages,
+        max_tokens: maxTokens,
         temperature: 0.7,
       });
+    };
+    
+    try {
+      // First attempt with regular parameters
+      const response = await attemptAnalysis(truncatedTranscript, 3000);
       
       debug('Received response from OpenAI');
       
@@ -525,26 +539,13 @@ Fix these issues and you might actually have something edible that aligns with y
         // Special handling for token limit errors - retry with even smaller input
         debug('Token limit exceeded - trying with much smaller transcript');
         
-        // Truncate to an even smaller size
-        const veryShortTranscript = truncatedTranscript.substring(0, 5000);
+        // Truncate to an even smaller size - 4000 characters
+        const veryShortTranscript = truncatedTranscript.substring(0, 4000);
         
         try {
-          // Simplified prompt
-          const smallerResponse = await openai.chat.completions.create({
-            model: "gpt-3.5-turbo",
-            messages: [
-              {
-                role: "system",
-                content: "You are Gordon Ramsay. Be brief but helpful."
-              },
-              {
-                role: "user",
-                content: `Extract a recipe from this transcript and give brief cooking advice:\n${veryShortTranscript}`
-              }
-            ],
-            max_tokens: 2000,
-            temperature: 0.7,
-          });
+          // Retry with simplified prompt and smaller transcript
+          debug('RETRY ATTEMPT with simplified prompt and smaller transcript');
+          const smallerResponse = await attemptAnalysis(veryShortTranscript, 2000, true);
           
           if (smallerResponse && smallerResponse.choices && smallerResponse.choices[0]) {
             const smallerAnalysis = smallerResponse.choices[0].message.content.trim();
@@ -552,12 +553,39 @@ Fix these issues and you might actually have something edible that aligns with y
             // Return the smaller analysis with a note
             debug('Successfully generated smaller analysis after token limit error');
             return res.json({
-              analysis: smallerAnalysis + "\n\n[Note: This is a simplified analysis due to the transcript length. For a more detailed analysis, try with a shorter video.]"
+              analysis: smallerAnalysis + "\n\n[Note: This is a simplified analysis due to the transcript length. For a more detailed analysis, try with a shorter video.]",
+              usedFallback: true
             });
           }
         } catch (retryError) {
           debug('Failed retry with smaller transcript:', retryError.message);
-          errorMessage = 'The transcript is too long for processing. Please try with a shorter video (5-10 minutes).';
+          
+          // Try an absolute minimum approach - just 2000 chars
+          try {
+            const tinyTranscript = truncatedTranscript.substring(0, 2000);
+            debug('FINAL RETRY ATTEMPT with tiny transcript (2000 chars)');
+            
+            const tinyResponse = await attemptAnalysis(tinyTranscript, 1500, true);
+            
+            if (tinyResponse && tinyResponse.choices && tinyResponse.choices[0]) {
+              const tinyAnalysis = tinyResponse.choices[0].message.content.trim();
+              
+              debug('Successfully generated tiny analysis after multiple token limit errors');
+              return res.json({
+                analysis: tinyAnalysis + "\n\n[Note: This is an extremely simplified analysis due to API limitations with this transcript length. For better results, try with a much shorter video (2-3 minutes).]",
+                usedFallback: true,
+                severelyLimited: true
+              });
+            }
+          } catch (finalError) {
+            debug('All retry attempts failed. Returning mock data as last resort');
+            // If all else fails, use mock data
+            return res.json({
+              analysis: "I've tried to analyze this recipe, but the transcript is simply too long for processing with the current API limitations. Here are some general cooking tips instead:\n\n1. Always season properly. Salt and pepper are your basic essentials.\n2. Don't overcrowd the pan - cook in batches if needed.\n3. Let meat rest before cutting.\n4. Balance your macros with lean proteins, complex carbs, and healthy fats.\n\nTry again with a much shorter video (2-3 minutes) for a proper analysis.",
+              usedFallback: true,
+              apiFailure: true
+            });
+          }
         }
       } else {
         errorMessage = openaiError.message;
