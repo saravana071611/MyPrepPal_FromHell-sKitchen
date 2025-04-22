@@ -153,6 +153,23 @@ export const apiClient = {
     );
   },
   
+  // Combined extraction and transcription in one request
+  extractAndTranscribe: async (videoUrl) => {
+    // Ensure we have a socket connection and get the socket ID
+    const socketId = await ensureSocketConnection();
+    log('Using socket ID for combined extraction and transcription:', socketId);
+    
+    return api.post('/api/youtube/extract-and-transcribe', 
+      { 
+        videoUrl,
+        socketId // Include socket ID so server can send progress updates
+      }, 
+      {
+        timeout: 300000 // 5 minutes for the entire process
+      }
+    );
+  },
+  
   // User profile API calls
   getUserProfile: (userId) => {
     return api.get(`/api/user/profile/${userId}`);

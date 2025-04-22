@@ -200,6 +200,9 @@ const RecipeExtractorPage = () => {
   const [progressPercent, setProgressPercent] = useState(0);
   const timerRef = useRef(null);
 
+  // Add a new state to track socket subscription
+  const [socketSubscribed, setSocketSubscribed] = useState(false);
+
   // Function to start the processing timer
   const startProcessingTimer = (estimatedSeconds, initialStage) => {
     if (timerRef.current) clearInterval(timerRef.current);
@@ -349,129 +352,54 @@ const RecipeExtractorPage = () => {
     }
   };
 
-  // Initialize socket.io connection when component mounts
+  // Setup socket connection and event listeners
   useEffect(() => {
-    // Connect to socket.io at component mount
-    log('Component mounted, initializing socket connection');
-    
     // Initialize socket connection
     const socket = socketService.connect();
-    if (socket) {
-      log('Socket connection initialized');
-    } else {
-      console.error('[RecipeExtractor] Failed to initialize socket connection');
-    }
     
-    // Clean up socket on component unmount
+    // Subscribe to extraction progress updates
+    const unsubscribe = socketService.subscribeToExtractionProgress((data) => {
+      log('Received extraction progress update:', data);
+      
+      // Update processing state based on the event
+      const { stage, progress, message, title } = data;
+      
+      // Update processing stage and progress
+      updateProcessingStage(stage, progress);
+      
+      // Handle completion
+      if (stage === 'completed') {
+        log('Extraction process completed!');
+        
+        // Stop the timer
+        stopProcessingTimer(true);
+        
+        // Special handling for transcription completed
+        if (message && message.includes('Transcription completed')) {
+          setStep(3); // Move to analysis step
+          setLoading(false);
+        }
+      }
+      
+      // Handle errors
+      if (stage === 'error') {
+        log('Extraction process error:', message);
+        setError(message || 'Unknown error occurred during extraction');
+        stopProcessingTimer();
+        setLoading(false);
+      }
+    });
+    
+    setSocketSubscribed(true);
+    
+    // Clean up socket subscriptions
     return () => {
-      log('Component unmounting, closing socket connection');
-      socketService.disconnect();
+      unsubscribe();
+      setSocketSubscribed(false);
     };
   }, []);
 
-  // Set up socket event listeners
-  useEffect(() => {
-    log('Setting up socket event listeners');
-    
-    // Make sure socket is connected before subscribing
-    if (!socketService.isConnected()) {
-      log('Socket not connected, connecting now');
-      socketService.connect();
-    }
-    
-    // Use local variables to store the unsubscribe functions
-    let unsubscribeAudio = null;
-    let unsubscribeTranscription = null;
-    
-    try {
-      // Set up listener for audio extraction progress with error handling
-      unsubscribeAudio = socketService.subscribeToAudioProgress((data) => {
-        log('Received audio extraction progress update:', data);
-        
-        if (data.stage === 'error') {
-          setError(data.message || 'Error during audio extraction');
-          stopProcessingTimer();
-          setLoading(false);
-          return;
-        }
-        
-        // Map socket progress stages to our UI stages
-        const stageMap = {
-          'initialized': { stage: 'Preparing to extract audio', percent: 0 },
-          'info': { stage: 'Fetching video information', percent: 10 },
-          'download': { stage: 'Downloading audio from YouTube', percent: data.progress || 20 },
-          'processing': { stage: 'Processing audio file', percent: data.progress || 80 },
-          'completed': { stage: 'Audio extraction complete', percent: 100 }
-        };
-        
-        const mappedStage = stageMap[data.stage] || { stage: data.message || 'Processing', percent: data.progress || 50 };
-        
-        // Update processing stage and progress
-        log('Updating stage to:', mappedStage.stage, 'with progress:', mappedStage.percent);
-        updateProcessingStage(mappedStage.stage, mappedStage.percent);
-      });
-      
-      // Add listener for transcription progress updates with error handling
-      unsubscribeTranscription = socketService.subscribeToTranscriptionProgress((data) => {
-        log('Received transcription progress update:', data);
-        
-        if (data.stage === 'error') {
-          setError(data.message || 'Error during transcription');
-          stopProcessingTimer();
-          setLoading(false);
-          return;
-        }
-        
-        // Map socket progress stages to our UI stages
-        const stageMap = {
-          'initialized': { stage: 'Starting transcription', percent: 60 },
-          'processing': { stage: 'Transcribing audio', percent: data.progress || 70 },
-          'finalizing': { stage: 'Finalizing transcription', percent: 90 },
-          'completed': { stage: 'Transcription complete', percent: 100 }
-        };
-        
-        const mappedStage = stageMap[data.stage] || { stage: data.message || 'Processing transcription', percent: data.progress || 75 };
-        
-        // Update processing stage and progress
-        log('Updating stage to:', mappedStage.stage, 'with progress:', mappedStage.percent);
-        updateProcessingStage(mappedStage.stage, mappedStage.percent);
-        
-        // If transcription is complete, update the UI
-        if (data.stage === 'completed' && data.transcript) {
-          setTranscript(data.transcript);
-          setStep(3);
-          stopProcessingTimer(true);
-          setLoading(false);
-        }
-      });
-    } catch (error) {
-      console.error('[RecipeExtractor] Error setting up socket event listeners:', error);
-    }
-    
-    // Clean up socket listeners on component unmount
-    return () => {
-      log('Cleaning up socket event listeners');
-      
-      // Safely call the unsubscribe functions if they exist
-      try {
-        if (typeof unsubscribeAudio === 'function') {
-          unsubscribeAudio();
-        }
-      } catch (error) {
-        console.error('[RecipeExtractor] Error unsubscribing from audio events:', error);
-      }
-      
-      try {
-        if (typeof unsubscribeTranscription === 'function') {
-          unsubscribeTranscription();
-        }
-      } catch (error) {
-        console.error('[RecipeExtractor] Error unsubscribing from transcription events:', error);
-      }
-    };
-  }, []);
-
-  // Extract audio and transcribe - modified to use socket updates
+  // Update the extraction and transcription method
   const extractAudioAndTranscribe = async () => {
     setLoading(true);
     setError('');
@@ -484,41 +412,57 @@ const RecipeExtractorPage = () => {
     if (!socketService.isConnected()) {
       log('Socket not connected, showing error message');
       setError('Could not establish a real-time connection to the server. Progress updates may not be visible. Please refresh the page and try again.');
-      // We'll continue anyway, but the user has been warned
+      // Continue anyway, but the user has been warned
     }
     
     // Estimate processing time based on video length
-    // Rule of thumb: ~1.5x the video length is a reasonable estimate
     const videoLengthSecs = videoInfo?.length_seconds || 600; // Default to 10 min if unknown
-    const estimatedProcessingTime = Math.ceil(videoLengthSecs * 1.5); 
+    const estimatedProcessingTime = Math.ceil(videoLengthSecs * 2); // Allow for extraction and transcription
     
     // Start timer with estimated time
-    startProcessingTimer(estimatedProcessingTime, 'Preparing to extract audio');
-    updateProcessingStage('Initializing extraction process', 0);
+    startProcessingTimer(estimatedProcessingTime, 'Preparing extraction process');
+    updateProcessingStage('Initializing', 0);
     
     try {
       // Short delay to allow UI to update before making the request
       await new Promise(resolve => setTimeout(resolve, 100));
       
-      // First make sure the progress indicator is immediately visible
+      // Update progress indicator
       updateProcessingStage('Connecting to server', 5);
       
-      // Kick off the audio extraction process - progress will be tracked via socket.io
-      log('Starting audio extraction for URL:', videoUrl);
-      await apiClient.extractAudio(videoUrl);
+      log('Starting combined extraction and transcription for URL:', videoUrl);
       
-      // Update progress since we've successfully initiated the extraction
-      updateProcessingStage('Audio extraction in progress', 20);
-      log('Audio extraction initiated successfully');
+      // Use the combined endpoint for better efficiency
+      const response = await apiClient.extractAndTranscribe(videoUrl);
       
-      // Start the transcription process
-      log('Starting transcription process');
-      await apiClient.transcribeAudio({ videoUrl });
-      log('Transcription process initiated successfully');
-      
-      // The socket listeners will handle progress updates for both extraction and transcription
+      if (response.data.success) {
+        log('Combined extraction and transcription completed successfully');
+        
+        // Update transcript with the result
+        setTranscript(response.data.transcription);
+        
+        // Update video information if returned
+        if (response.data.videoInfo) {
+          log('Received updated video info from extraction process');
+          // Update any missing info in videoInfo state
+          setVideoInfo(prevInfo => ({
+            ...prevInfo,
+            title: response.data.videoInfo.title || prevInfo.title,
+            length_seconds: response.data.videoInfo.duration || prevInfo.length_seconds,
+            video_id: response.data.videoInfo.videoId || prevInfo.video_id
+          }));
+        }
+        
+        // Move to the analysis step
+        setStep(3);
+        stopProcessingTimer(true);
+      } else {
+        log('Combined extraction and transcription returned without success flag');
+        throw new Error('Failed to extract and transcribe video');
+      }
     } catch (error) {
-      console.error('Error in audio extraction or transcription:', error);
+      console.error('Error in extraction and transcription process:', error);
+      
       let errorMessage = 'Failed to process video. Please try again or choose a different video.';
       
       if (error.response && error.response.data && error.response.data.error) {
@@ -527,6 +471,7 @@ const RecipeExtractorPage = () => {
       
       setError(errorMessage);
       stopProcessingTimer();
+    } finally {
       setLoading(false);
     }
   };
@@ -665,50 +610,31 @@ const RecipeExtractorPage = () => {
         return (
           <div className="recipe-form-container">
             <h2>Enter a YouTube Recipe URL</h2>
-            <p>Paste a URL to a short (20-30 min) recipe video you'd like to analyze.</p>
+            <p>Paste a URL to a recipe video you'd like to analyze. For best results, choose videos that clearly explain the recipe ingredients and steps.</p>
             
             <form onSubmit={handleSubmit} className="recipe-form">
               <div className="form-group">
                 <label htmlFor="videoUrl" className="form-label">YouTube Video URL</label>
                 <div className="url-input-container">
                   <input
-                    type="url"
+                    type="text"
                     id="videoUrl"
-                    className="form-control"
+                    name="videoUrl"
+                    className="url-input"
+                    placeholder="https://www.youtube.com/watch?v=..."
                     value={videoUrl}
                     onChange={handleVideoUrlChange}
-                    placeholder="https://www.youtube.com/watch?v=..."
-                    required
                     disabled={loading}
                   />
-                  {loading && <div className="input-loading-indicator"></div>}
-                </div>
-                <div className="form-hint">
-                  <p>Example: <a href="#" onClick={(e) => {e.preventDefault(); setVideoUrl('https://www.youtube.com/watch?v=Cyskqnp1j64');}}><i className="fas fa-link"></i> Gordon Ramsay's Recipe</a></p>
-                  <p>Try this: <a href="#" onClick={(e) => {e.preventDefault(); setVideoUrl('https://www.youtube.com/watch?v=yRg1lY98bxE');}}><i className="fas fa-link"></i> Alternative Recipe Video</a></p>
-                  <p className="hint-details">Supported formats: youtube.com/watch?v=ID, youtu.be/ID, youtube.com/shorts/ID</p>
+                  <button 
+                    type="submit" 
+                    className="submit-btn"
+                    disabled={loading || !videoUrl}
+                  >
+                    {loading ? 'Processing...' : 'Analyze'}
+                  </button>
                 </div>
               </div>
-              
-              <button 
-                type="submit" 
-                className="btn btn-primary" 
-                disabled={loading}
-              >
-                {loading ? 'Fetching Video Info...' : 'Get Video Info'}
-              </button>
-              
-              {loading && (
-                <div className="loading-message">
-                  <p>Please wait while we check the video information...</p>
-                  <ProcessingStatus 
-                    processingStage={processingStage}
-                    elapsedTime={elapsedTime}
-                    estimatedTimeRemaining={estimatedTimeRemaining}
-                    progressPercent={progressPercent}
-                  />
-                </div>
-              )}
             </form>
           </div>
         );
@@ -716,142 +642,163 @@ const RecipeExtractorPage = () => {
       case 2:
         return (
           <div className="video-info-container">
-            <h2>Video Found!</h2>
-            <div className="video-preview">
-              {videoInfo && (
-                <>
+            <h2>Video Information</h2>
+            
+            {videoInfo && (
+              <>
+                <div className="video-details">
                   <div className="video-thumbnail">
                     <img 
-                      src={videoInfo.thumbnail_url} 
-                      alt={videoInfo.title} 
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = 'https://via.placeholder.com/480x360?text=No+Thumbnail';
-                      }}
+                      src={videoInfo.thumbnail_url || `https://img.youtube.com/vi/${videoInfo.video_id}/0.jpg`}
+                      alt={videoInfo.title || 'Video thumbnail'}
                     />
                   </div>
-                  <div className="video-details">
-                    <h3>{videoInfo.title}</h3>
-                    <p className="video-author">By {videoInfo.author}</p>
-                    <p className="video-length">Duration: {formatDuration(videoInfo.length_seconds)}</p>
-                    <p className="video-views">{formatViews(videoInfo.views)}</p>
+                  
+                  <div className="video-meta">
+                    <h3 className="video-title">{videoInfo.title}</h3>
+                    
+                    <div className="video-stats">
+                      {videoInfo.length_seconds && (
+                        <div className="video-duration">
+                          <span className="stat-label">Duration:</span> 
+                          <span className="stat-value">{formatDuration(videoInfo.length_seconds)}</span>
+                        </div>
+                      )}
+                      
+                      {videoInfo.view_count && (
+                        <div className="video-views">
+                          <span className="stat-label">Views:</span> 
+                          <span className="stat-value">{formatViews(videoInfo.view_count)}</span>
+                        </div>
+                      )}
+                    </div>
+                    
+                    <p className="extraction-info">
+                      I will extract audio from this video, transcribe it using AI, and analyze it for recipe details.
+                      This process takes approximately {formatDuration(videoInfo.length_seconds * 2)}.
+                    </p>
                   </div>
-                </>
-              )}
-            </div>
-            
-            <p className="step-description">
-              Now I'll extract the audio from this video and generate a transcript.
-              This might take a few minutes depending on the video length.
-            </p>
-            
-            <button 
-              onClick={handleTranscribeRequest} 
-              className="btn btn-primary" 
-              disabled={loading}
-            >
-              {loading ? 'Processing...' : 'Extract & Transcribe'}
-            </button>
-            
-            {loading && (
-              <div className="loading-message">
-                <p>Please wait while we extract and transcribe the audio...</p>
-                <ProcessingStatus 
-                  processingStage={processingStage}
-                  elapsedTime={elapsedTime}
-                  estimatedTimeRemaining={estimatedTimeRemaining}
-                  progressPercent={progressPercent}
-                />
-              </div>
+                </div>
+                
+                <div className="action-buttons">
+                  <button 
+                    className="action-btn back-btn"
+                    onClick={() => setStep(1)}
+                    disabled={loading}
+                  >
+                    Change Video
+                  </button>
+                  
+                  <button 
+                    className="action-btn primary-btn"
+                    onClick={handleTranscribeRequest}
+                    disabled={loading}
+                  >
+                    {loading ? 'Processing...' : 'Extract & Transcribe'}
+                  </button>
+                </div>
+              </>
             )}
-            
-            <button 
-              onClick={() => setStep(1)} 
-              className="btn btn-secondary"
-              disabled={loading}
-            >
-              Choose Different Video
-            </button>
           </div>
         );
         
       case 3:
+        // Transcription results and analysis request
         return (
-          <div className="transcript-container">
-            <h2>Transcript Generated!</h2>
-            <p className="step-description">
-              I've successfully transcribed the video. Now Gordon Ramsay will analyze this recipe
-              {userProfile ? ' based on your fitness profile and macro goals.' : '.'}
-            </p>
+          <div className="transcription-container">
+            <h2>Recipe Transcription</h2>
             
-            <div className="transcript-box">
-              <h3>Video Transcript</h3>
-              <div className="transcript-content">
-                <p>{transcript}</p>
+            <div className="transcription-info">
+              <p>
+                I've extracted and transcribed the audio from the video. You can review the transcription below.
+                {userProfile ? 
+                  ` Based on your profile, I'll customize the recipe analysis to match your fitness goals.` : 
+                  ` I'll analyze this to extract the recipe details.`}
+              </p>
+              
+              {userProfile && (
+                <div className="profile-reminder">
+                  <h4>Your Health Profile</h4>
+                  <ul>
+                    <li>Age: {userProfile.age}</li>
+                    <li>Current Weight: {userProfile.currentWeight}kg</li>
+                    <li>Target Weight: {userProfile.targetWeight}kg</li>
+                    <li>Activity Level: {userProfile.activityLevel}</li>
+                  </ul>
+                </div>
+              )}
+            </div>
+            
+            <div className="transcription-text-container">
+              <h3>Transcription</h3>
+              <div className="transcription-text">
+                {transcript || 'No transcription available. Please try extracting the audio again.'}
               </div>
             </div>
             
-            <button 
-              onClick={handleAnalysisRequest} 
-              className="btn btn-primary" 
-              disabled={loading}
-            >
-              {loading ? 'Analyzing...' : 'Get Gordon\'s Analysis'}
-            </button>
-            
-            {loading && (
-              <div className="loading-message">
-                <p>Please wait while Gordon Ramsay analyzes your recipe...</p>
-                <ProcessingStatus 
-                  processingStage={processingStage}
-                  elapsedTime={elapsedTime}
-                  estimatedTimeRemaining={estimatedTimeRemaining}
-                  progressPercent={progressPercent}
-                />
-              </div>
-            )}
+            <div className="action-buttons">
+              <button 
+                className="action-btn back-btn"
+                onClick={() => setStep(2)}
+                disabled={loading}
+              >
+                Back to Video
+              </button>
+              
+              <button 
+                className="action-btn primary-btn"
+                onClick={handleAnalysisRequest}
+                disabled={loading || !transcript}
+              >
+                {loading ? 'Analyzing...' : 'Analyze Recipe'}
+              </button>
+            </div>
           </div>
         );
         
       case 4:
+        // Recipe analysis results
         return (
           <div className="analysis-container">
             <h2>Gordon Ramsay's Recipe Analysis</h2>
             
-            <div className="gordon-avatar-container">
-              <img 
-                src="/images/gordon-ramsay.jpg" 
-                alt="Gordon Ramsay" 
-                className="gordon-avatar"
-                onError={(e) => {
-                  e.target.onerror = null;
-                  e.target.style.display = 'none';
-                }}
-              />
-            </div>
-            
             <div className="analysis-content">
-              <p>{recipeAnalysis}</p>
+              {recipeAnalysis ? (
+                <div className="recipe-analysis" dangerouslySetInnerHTML={{ __html: recipeAnalysis }} />
+              ) : (
+                <p>No analysis available. Please try analyzing the recipe again.</p>
+              )}
             </div>
             
-            <button 
-              onClick={() => setStep(1)} 
-              className="btn btn-primary"
-            >
-              Analyze Another Recipe
-            </button>
-            
-            {!userProfile && (
-              <div className="profile-suggestion">
-                <p>Want a personalized macro nutrition plan? Create your fitness profile!</p>
-                <a href="/profile" className="btn btn-secondary">Create Profile</a>
-              </div>
-            )}
+            <div className="action-buttons">
+              <button 
+                className="action-btn back-btn"
+                onClick={() => setStep(3)}
+                disabled={loading}
+              >
+                Back to Transcription
+              </button>
+              
+              <button 
+                className="action-btn restart-btn"
+                onClick={() => {
+                  setStep(1);
+                  setVideoUrl('');
+                  setVideoInfo(null);
+                  setTranscript('');
+                  setRecipeAnalysis('');
+                  setError('');
+                }}
+                disabled={loading}
+              >
+                Start Over
+              </button>
+            </div>
           </div>
         );
         
       default:
-        return <div>Something went wrong. Please refresh the page.</div>;
+        return <div>Unknown step</div>;
     }
   };
 

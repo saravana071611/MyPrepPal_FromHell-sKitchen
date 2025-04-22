@@ -452,6 +452,302 @@ router.post('/extract-audio', async (req, res) => {
   }
 });
 
+// Route to extract audio and transcribe in one process
+router.post('/extract-and-transcribe', async (req, res) => {
+  try {
+    const { videoUrl } = req.body;
+    const io = req.app.get('io');
+    const socketId = req.body.socketId;
+    
+    if (!videoUrl) {
+      return res.status(400).json({ error: 'YouTube URL is required' });
+    }
+    
+    console.log('Attempting to extract audio and transcribe from:', videoUrl);
+    
+    // Emit initial progress update
+    if (socketId) {
+      io.to(socketId).emit('extractionProgress', {
+        stage: 'initialized',
+        progress: 0,
+        message: 'Starting audio extraction and transcription process...'
+      });
+    }
+    
+    const outputDir = path.join(__dirname, '../temp');
+    
+    // Ensure output directory exists
+    if (!fs.existsSync(outputDir)) {
+      console.log('Creating output directory:', outputDir);
+      fs.mkdirSync(outputDir, { recursive: true });
+    }
+    
+    // Generate a unique filename based on timestamp
+    const timestamp = new Date().getTime();
+    const outputFilePath = path.join(outputDir, `audio_${timestamp}.mp3`);
+    
+    // Emit progress update - getting video info
+    if (socketId) {
+      io.to(socketId).emit('extractionProgress', {
+        stage: 'info',
+        progress: 5,
+        message: 'Fetching video information...'
+      });
+    }
+    
+    // Get video info with error handling
+    let videoInfo;
+    try {
+      console.log('Fetching video info...');
+      videoInfo = await ytdl.getInfo(videoUrl);
+      console.log('Successfully fetched video info for:', videoInfo.videoDetails.title);
+    } catch (infoError) {
+      console.error('Error fetching video info:', infoError.message);
+      
+      // Try fallback method to get video info
+      try {
+        const videoId = extractVideoId(videoUrl);
+        videoInfo = await fetchVideoInfoFallback(videoId);
+        console.log('Using fallback video info method, found title:', videoInfo.videoDetails.title);
+      } catch (fallbackError) {
+        console.error('Fallback video info also failed:', fallbackError.message);
+        
+        // Create a minimal video info object
+        videoInfo = { 
+          videoDetails: { 
+            title: `Unknown Video (${timestamp})`, 
+            lengthSeconds: 300,
+            videoId: extractVideoId(videoUrl)
+          }
+        };
+        console.log('Using minimal fallback video info');
+      }
+      
+      // Report warning to client
+      if (socketId) {
+        io.to(socketId).emit('extractionProgress', {
+          stage: 'warning',
+          progress: 8,
+          message: `Warning: Could not fetch full video details. Continuing with extraction.`
+        });
+      }
+    }
+    
+    const title = videoInfo.videoDetails.title;
+    const videoLengthSeconds = parseInt(videoInfo.videoDetails.lengthSeconds) || 300;
+    
+    // Emit progress update - starting download
+    if (socketId) {
+      io.to(socketId).emit('extractionProgress', {
+        stage: 'download',
+        progress: 10,
+        message: 'Starting audio download...',
+        title: title,
+        lengthSeconds: videoLengthSeconds
+      });
+    }
+    
+    // Extract audio
+    try {
+      // Create ytdl stream
+      const stream = ytdl(videoUrl, { 
+        quality: 'highestaudio',
+        filter: 'audioonly' 
+      });
+      
+      let downloadProgress = 0;
+      let lastProgressUpdate = 0;
+      
+      stream.on('progress', (chunkLength, downloaded, total) => {
+        // Calculate progress percentage
+        downloadProgress = Math.floor((downloaded / total) * 100);
+        
+        // Only emit progress updates if progress changed by at least 5% or every 2 seconds
+        const now = Date.now();
+        if (downloadProgress - lastProgressUpdate >= 5 || now - lastProgressUpdate >= 2000) {
+          lastProgressUpdate = downloadProgress;
+          console.log(`Download progress: ${downloadProgress}%`);
+          if (socketId) {
+            io.to(socketId).emit('extractionProgress', {
+              stage: 'downloading',
+              progress: 10 + (downloadProgress * 0.3), // Map download progress to 10-40% of total progress
+              message: `Downloading audio: ${downloadProgress}%`
+            });
+          }
+        }
+      });
+      
+      // Process with ffmpeg
+      await new Promise((resolve, reject) => {
+        ffmpeg(stream)
+          .audioBitrate(128)
+          .save(outputFilePath)
+          .on('progress', (progress) => {
+            if (progress && progress.percent) {
+              console.log(`Processing progress: ${Math.floor(progress.percent)}%`);
+              if (socketId) {
+                io.to(socketId).emit('extractionProgress', {
+                  stage: 'processing',
+                  progress: 40 + (progress.percent * 0.2), // Map conversion progress to 40-60% of total progress
+                  message: `Processing audio: ${Math.floor(progress.percent)}%`
+                });
+              }
+            }
+          })
+          .on('end', () => {
+            console.log(`Downloaded and converted audio: ${title}`);
+            if (socketId) {
+              io.to(socketId).emit('extractionProgress', {
+                stage: 'extracted',
+                progress: 60,
+                message: 'Audio extraction completed. Starting transcription...',
+                audioPath: outputFilePath
+              });
+            }
+            resolve();
+          })
+          .on('error', (err) => {
+            console.error('Error in ffmpeg process:', err);
+            if (socketId) {
+              io.to(socketId).emit('extractionProgress', {
+                stage: 'error',
+                progress: 0,
+                message: `Error processing audio: ${err.message || 'Failed to process audio'}`
+              });
+            }
+            reject(err);
+          });
+      });
+      
+      // Check file exists and has content
+      if (!fs.existsSync(outputFilePath)) {
+        throw new Error('Output audio file was not created');
+      }
+      
+      const stats = fs.statSync(outputFilePath);
+      console.log(`Output file size: ${Math.round(stats.size / 1024)} KB`);
+      
+      if (stats.size < 1024) {
+        throw new Error('Extracted audio file is too small, extraction may have failed');
+      }
+      
+      // Continue with transcription
+      if (socketId) {
+        io.to(socketId).emit('extractionProgress', {
+          stage: 'transcribing',
+          progress: 65,
+          message: 'Starting transcription process...'
+        });
+      }
+      
+      // Prepare OpenAI API access
+      const openaiApiKey = process.env.OPENAI_API_KEY;
+      if (!openaiApiKey) {
+        throw new Error('OpenAI API key not configured');
+      }
+      
+      const OpenAI = require('openai');
+      const openai = new OpenAI({
+        apiKey: openaiApiKey
+      });
+      
+      console.log('Starting transcription with Whisper API');
+      
+      // Send progress update
+      if (socketId) {
+        io.to(socketId).emit('extractionProgress', {
+          stage: 'transcribing',
+          progress: 70,
+          message: 'Transcribing audio with AI...'
+        });
+      }
+      
+      // Read audio file
+      const audioFile = fs.createReadStream(outputFilePath);
+      
+      // Call Whisper API
+      const transcription = await openai.audio.transcriptions.create({
+        file: audioFile,
+        model: 'whisper-1',
+        language: 'en',
+        response_format: 'json'
+      });
+      
+      console.log('Transcription completed successfully');
+      
+      // Extract the transcribed text
+      const transcribedText = transcription.text;
+      
+      // Send completed progress
+      if (socketId) {
+        io.to(socketId).emit('extractionProgress', {
+          stage: 'completed',
+          progress: 100,
+          message: 'Transcription completed successfully!',
+          title: title
+        });
+      }
+      
+      // Return success with transcription
+      res.json({
+        success: true,
+        videoInfo: {
+          title: title,
+          duration: videoLengthSeconds,
+          videoId: videoInfo.videoDetails.videoId
+        },
+        transcription: transcribedText
+      });
+      
+      // Cleanup: remove the audio file after successfully transcribing
+      setTimeout(() => {
+        try {
+          if (fs.existsSync(outputFilePath)) {
+            fs.unlinkSync(outputFilePath);
+            console.log(`Cleaned up temporary audio file: ${outputFilePath}`);
+          }
+        } catch (cleanupError) {
+          console.error('Error cleaning up audio file:', cleanupError);
+        }
+      }, 5000); // 5 second delay to ensure file isn't still in use
+      
+    } catch (processingError) {
+      console.error('Error during processing:', processingError);
+      
+      if (socketId) {
+        io.to(socketId).emit('extractionProgress', {
+          stage: 'error',
+          progress: 0,
+          message: `Error: ${processingError.message || 'Failed to process audio'}`
+        });
+      }
+      
+      res.status(500).json({ 
+        error: 'Failed to extract and transcribe audio',
+        details: processingError.message
+      });
+    }
+  } catch (error) {
+    console.error('Error in extraction process:', error);
+    
+    const io = req.app.get('io');
+    const socketId = req.body.socketId;
+    
+    if (socketId) {
+      io.to(socketId).emit('extractionProgress', {
+        stage: 'error',
+        progress: 0,
+        message: `Error: ${error.message || 'Unknown error occurred'}`
+      });
+    }
+    
+    res.status(500).json({ 
+      error: 'Failed to extract and transcribe YouTube video',
+      details: error.message
+    });
+  }
+});
+
 // Route to get YouTube video info
 router.get('/video-info', async (req, res) => {
   try {

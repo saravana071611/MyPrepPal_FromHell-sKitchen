@@ -11,9 +11,19 @@ function initializeSocketIO(server) {
 
   console.log('Socket.IO initialized');
 
+  // Keep track of connected clients
+  const connectedClients = new Map();
+
   // Handle connection event
   io.on('connection', (socket) => {
     console.log(`Client connected: ${socket.id}`);
+    
+    // Add to connected clients
+    connectedClients.set(socket.id, {
+      id: socket.id,
+      connectedAt: new Date(),
+      lastActivity: new Date()
+    });
 
     // Emit welcome message to client
     socket.emit('serverMessage', {
@@ -24,19 +34,82 @@ function initializeSocketIO(server) {
     // Handle client disconnect
     socket.on('disconnect', () => {
       console.log(`Client disconnected: ${socket.id}`);
+      connectedClients.delete(socket.id);
     });
 
-    // Handle test extraction event
+    // Handle connection test
+    socket.on('testConnection', () => {
+      console.log(`Received test connection request from ${socket.id}`);
+      updateClientActivity(socket.id);
+      
+      socket.emit('connectionTestResponse', {
+        success: true,
+        timestamp: new Date().toISOString(),
+        message: 'Connection test successful'
+      });
+    });
+
+    // Handle recipe extraction process event
+    socket.on('startExtractionProcess', async (data) => {
+      console.log(`Received extraction process request from ${socket.id}`, data);
+      updateClientActivity(socket.id);
+      
+      const { videoUrl } = data;
+      
+      if (!videoUrl) {
+        socket.emit('extractionProgress', {
+          stage: 'error',
+          progress: 0,
+          message: 'No video URL provided'
+        });
+        return;
+      }
+      
+      // Emit initial stage
+      socket.emit('extractionProgress', {
+        stage: 'initialized',
+        progress: 0,
+        message: 'Starting extraction process...'
+      });
+      
+      try {
+        // Make API request to extract audio and transcribe
+        // This is just for validation - the actual process will be handled by the API route
+        const axios = require('axios');
+        const serverUrl = process.env.NODE_ENV === 'production'
+          ? 'http://localhost:5000' // Would be different in production
+          : 'http://localhost:5000';
+          
+        await axios.post(`${serverUrl}/api/youtube/extract-and-transcribe`, {
+          videoUrl,
+          socketId: socket.id
+        });
+        
+        console.log('Extraction process request sent successfully');
+      } catch (error) {
+        console.error('Error starting extraction process:', error);
+        socket.emit('extractionProgress', {
+          stage: 'error',
+          progress: 0,
+          message: `Error: ${error.message || 'Failed to start extraction process'}`
+        });
+      }
+    });
+
+    // Handle test extraction event (simulated for testing)
     socket.on('startTestExtraction', (data) => {
       console.log(`Received test extraction request from ${socket.id}`, data);
-      const { duration = 10, stageCount = 5 } = data;
+      updateClientActivity(socket.id);
       
+      const { duration = 10, stageCount = 5 } = data;
       simulateExtraction(socket, duration, stageCount);
     });
     
     // Handle YouTube audio extraction test
     socket.on('startYouTubeExtraction', (data) => {
       console.log(`Received YouTube extraction request from ${socket.id}`, data);
+      updateClientActivity(socket.id);
+      
       const { videoUrl } = data;
       
       // Emit initial stage
@@ -50,6 +123,45 @@ function initializeSocketIO(server) {
       simulateYouTubeExtraction(socket, videoUrl);
     });
   });
+
+  // Helper function to update client activity timestamp
+  function updateClientActivity(socketId) {
+    if (connectedClients.has(socketId)) {
+      const clientInfo = connectedClients.get(socketId);
+      clientInfo.lastActivity = new Date();
+      connectedClients.set(socketId, clientInfo);
+    }
+  }
+
+  // Set up regular client check
+  setInterval(() => {
+    const now = new Date();
+    
+    // Log connected clients for monitoring
+    if (connectedClients.size > 0) {
+      console.log(`${connectedClients.size} clients connected`);
+    }
+    
+    // Check for inactive clients (inactive for more than 30 minutes)
+    for (const [socketId, clientInfo] of connectedClients.entries()) {
+      const inactiveTime = now - clientInfo.lastActivity;
+      const inactiveMinutes = Math.floor(inactiveTime / 60000);
+      
+      if (inactiveMinutes > 30) {
+        console.log(`Client ${socketId} inactive for ${inactiveMinutes} minutes, checking status`);
+        
+        // Try to send a ping to check if still connected
+        const socket = io.sockets.sockets.get(socketId);
+        if (socket) {
+          socket.emit('ping', { timestamp: now.toISOString() });
+        } else {
+          // Socket no longer exists, remove from tracking
+          console.log(`Removing inactive client ${socketId} from tracking`);
+          connectedClients.delete(socketId);
+        }
+      }
+    }
+  }, 600000); // Every 10 minutes
 
   return io;
 }

@@ -82,6 +82,11 @@ export const socketService = {
       socket.on('transcriptionProgress', (data) => {
         log('Received transcriptionProgress event (global handler):', data);
       });
+      
+      // Handle extraction progress events globally
+      socket.on('extractionProgress', (data) => {
+        log('Received extractionProgress event (global handler):', data);
+      });
     } else {
       log('Socket already connected with ID:', socket.id);
     }
@@ -166,6 +171,55 @@ export const socketService = {
         log('Cannot unsubscribe: socket is null');
       }
     };
+  },
+  
+  // Subscribe to extraction progress updates (combined process)
+  subscribeToExtractionProgress: (callback) => {
+    if (!socket) {
+      log('No socket connection, connecting now before subscribing to extractionProgress');
+      socketService.connect();
+    }
+    
+    if (socket) {
+      log('Subscribing to extractionProgress events');
+      socket.on('extractionProgress', (data) => {
+        log('Received extractionProgress event:', data);
+        callback(data);
+      });
+    } else {
+      console.warn('[Socket] Cannot subscribe to extractionProgress: socket is null');
+    }
+    
+    return () => {
+      log('Unsubscribing from extractionProgress events');
+      if (socket) {
+        socket.off('extractionProgress');
+      } else {
+        log('Cannot unsubscribe: socket is null');
+      }
+    };
+  },
+  
+  // Start the extraction process via socket
+  startExtractionProcess: (videoUrl) => {
+    if (!socket) {
+      log('No socket connection, connecting now before starting extraction process');
+      socketService.connect();
+    }
+    
+    if (!videoUrl) {
+      console.error('[Socket] Cannot start extraction process: No video URL provided');
+      return false;
+    }
+    
+    if (socket && socket.connected) {
+      log('Starting extraction process for URL:', videoUrl);
+      socket.emit('startExtractionProcess', { videoUrl });
+      return true;
+    } else {
+      console.warn('[Socket] Cannot start extraction process: socket is not connected');
+      return false;
+    }
   },
   
   // Get socket ID (useful for sending with API requests)
