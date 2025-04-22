@@ -6,12 +6,12 @@
   "currentHeight": 167,
   "activityLevel": "moderate",
   "targetWeight": 55,
-  "createdAt": "2025-04-22T03:35:50.257Z",
-  "updatedAt": "2025-04-22T03:35:53.545Z",
+  "createdAt": "2025-04-22T03:36:32.514Z",
+  "updatedAt": "2025-04-22T03:36:35.965Z",
   "macroGoals": {
-    "protein": "140g",
-    "carbs": "220g",
-    "fats": "70g",
-    "calories": "1950"
+    "protein": "130g",
+    "carbs": "150g",
+    "fats": "40g",
+    "calories": "1500"
   }
 }
