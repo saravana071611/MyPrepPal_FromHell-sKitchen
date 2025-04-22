@@ -425,17 +425,21 @@ THE BOTTOM LINE: Train 5-6 days/week. Progressive overload - add weight or reps 
               <div className="assessment-content">
                 {activePersona === 'gordon' ? (
                   <div className="persona-section gordon-section">
-                    <h3 className="persona-heading">GORDON RAMSAY:</h3>
-                    <ReactMarkdown>{extractSections().gordon}</ReactMarkdown>
+                    <h3 className="persona-heading">GORDON RAMSAY</h3>
+                    <div className="markdown-content">
+                      <ReactMarkdown>{extractSections().gordon}</ReactMarkdown>
+                    </div>
                   </div>
                 ) : (
                   <div className="persona-section rock-section">
-                    <h3 className="persona-heading">THE ROCK:</h3>
-                    <ReactMarkdown>{extractSections().rock}</ReactMarkdown>
+                    <h3 className="persona-heading">THE ROCK</h3>
+                    <div className="markdown-content">
+                      <ReactMarkdown>{extractSections().rock}</ReactMarkdown>
+                    </div>
                     {extractSections().rock.length < 10 && (
                       <div className="missing-content">
-                        <p style={{color: 'orange', marginTop: '15px', fontSize: '0.9rem'}}>
-                          Refreshing The Rock's content... Please try the assessment again if this persists.
+                        <p>
+                          The Rock is busy in the gym right now. Try refreshing or generating a new assessment.
                         </p>
                       </div>
                     )}
