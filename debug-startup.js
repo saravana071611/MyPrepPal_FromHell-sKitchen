@@ -12,21 +12,7 @@ const logWithTime = (message) => {
   console.log(`[${timeElapsed}s] ${message}`);
 };
 
-logWithTime('Starting debug process');
-
-// First, kill any existing Node processes
-try {
-  logWithTime('Stopping any existing Node processes...');
-  if (process.platform === 'win32') {
-    execSync('taskkill /F /IM node.exe >nul 2>&1 || echo No processes to kill', { shell: true });
-    logWithTime('Command executed: taskkill completed');
-  } else {
-    execSync('pkill -f node || echo No processes to kill', { shell: true });
-    logWithTime('Command executed: pkill completed');
-  }
-} catch (error) {
-  logWithTime(`Error during process termination: ${error.message}`);
-}
+logWithTime('Starting debug process - SKIPPING TASKKILL');
 
 // Run port-checker directly
 try {
@@ -53,16 +39,6 @@ try {
   // Set a timeout to detect if server is hanging
   const serverTimeout = setTimeout(() => {
     logWithTime('⚠️ Server startup timed out after 15 seconds');
-    // Try to kill the process
-    try {
-      if (process.platform === 'win32') {
-        execSync('taskkill /F /PID ' + serverProc.pid, { shell: true });
-      } else {
-        process.kill(-serverProc.pid, 'SIGKILL');
-      }
-    } catch (e) {
-      logWithTime(`Error killing server process: ${e.message}`);
-    }
     moveToNextStep();
   }, 15000);
 
