@@ -77,8 +77,12 @@ router.post('/fitness-assessment', async (req, res) => {
       // Gordon Ramsay's part (now first) - Focus on diet and weight
       mockAssessment += `**GORDON RAMSAY:**\n\n`;
       mockAssessment += `WAKE UP, YOU ${isWeightLoss ? 'OVERWEIGHT' : 'UNDERWEIGHT'} DISASTER! At ${currentWeight}kg with a BMI of ${bmi}, you need to ${isWeightLoss ? 'LOSE' : 'GAIN'} ${Math.abs(weightDiff)}kg! Your current diet is ABSOLUTELY PATHETIC!\n\n`;
-      mockAssessment += `Look at you - a ${age}-year-old ${gender} with a ${activityLevel} activity level trying to reach ${targetWeight}kg. BLOODY HELL! I've seen better nutrition plans written on a FAST FOOD WRAPPER! Your eating habits are DESTROYING your body, and at ${currentHeight}cm tall, you can't afford to keep this up!\n\n`;
-      mockAssessment += `I'M NOT FINISHED! Your metabolism is CRYING OUT FOR HELP! With every meal of processed garbage, you're sabotaging what could be a PERFECTLY GOOD body! It's time to WAKE UP and fix this DISASTER you call a diet!\n\n`;
+      mockAssessment += `Look at your EATING HABITS - they're a F***ING NIGHTMARE! Your metabolism is suffering from the GARBAGE you're putting in your body! At ${age} years old, you can't afford to keep poisoning yourself with processed RUBBISH!\n\n`;
+      mockAssessment += `Your ${gender} body needs PROPER NUTRITION, not the cheap junk you've been shoving down your throat! With your height of ${currentHeight}cm, your food choices should be PRISTINE, not this DISASTER! You've been neglecting QUALITY INGREDIENTS and it SHOWS!\n\n`;
+      mockAssessment += `I've seen better diets in PRISON CAFETERIAS! Every calorie of JUNK is pushing you further from your target weight of ${targetWeight}kg! This stops NOW or you'll never see results! Your ${activityLevel} activity level means NOTHING if your diet is TRASH!\n\n`;
+      mockAssessment += `The state of your nutrition is so SHOCKING it would make a professional nutritionist CRY! You need immediate intervention before your arteries become as CLOGGED as a backed-up kitchen sink! The QUALITY of food you've been consuming is LOWER than the standards of a gas station convenience store!\n\n`;
+      mockAssessment += `Your body is SCREAMING for nutrients while you're feeding it GARBAGE! You might as well be eating straight from the BIN! At your age and weight, this eating pattern is a F***ING HEALTH DISASTER waiting to happen!\n\n`;
+      mockAssessment += `If I served what you eat in one of my restaurants, I'd be SHUT DOWN by health authorities! Your diet is an INSULT to proper nutrition and everything I stand for as a chef! It's time to COMPLETELY OVERHAUL your eating habits!\n\n`;
       
       mockAssessment += `FOOD COMMANDMENTS:\n\n`;
       
@@ -102,9 +106,14 @@ router.post('/fitness-assessment', async (req, res) => {
       
       // The Rock's part - Focus on exercise frequency and concrete steps
       mockAssessment += `**THE ROCK:**\n\n`;
-      mockAssessment += `CAN YOU SMELLLLL WHAT THE ROCK IS COOKING? [raises eyebrow] It's a workout plan to transform your ${gender}, ${age}-year-old, ${currentWeight}kg body! FOCUS. DISCIPLINE. CONSISTENCY.\n\n`;
-      mockAssessment += `Listen up! When I was grinding to make it in the WWE, then transitioning to Hollywood, I learned that the foundation of success is HARD WORK. At your height of ${currentHeight}cm, weighing ${currentWeight}kg, with a ${activityLevel} activity level, you've got a PERFECT opportunity to transform!\n\n`;
-      mockAssessment += `This isn't just any workout plan, jabroni. This is a SPECIFICALLY DESIGNED regimen for someone with YOUR exact body metrics. I've trained thousands of people, and when I see someone looking to ${isWeightLoss ? 'lose' : 'gain'} ${Math.abs(weightDiff)}kg, I know EXACTLY what they need!\n\n`;
+      mockAssessment += `CAN YOU SMELLLLL WHAT THE ROCK IS COOKING? [raises eyebrow] Let me tell you something about TRAINING and TRANSFORMING that ${currentWeight}kg body!\n\n`;
+      mockAssessment += `I've been in the fitness game for DECADES, pushing my body to the absolute limit. And I can tell you that with your ${activityLevel} activity level, we need to REVOLUTIONIZE your training program to hit that ${targetWeight}kg target!\n\n`;
+      mockAssessment += `Your current workout routine is WEAK, jabroni! At ${currentHeight}cm tall, your body has UNTAPPED POTENTIAL for building lean muscle and boosting your metabolism! The right exercise protocol will completely transform your body composition!\n\n`;
+      mockAssessment += `When I was transforming for roles like Black Adam and Hobbs, I learned that proper MACROS and TRAINING FREQUENCY are the keys to success. For someone your age (${age}), we need to focus on progressive overload and recovery cycles to optimize results!\n\n`;
+      mockAssessment += `The INTENSITY of your current workouts wouldn't even make my warm-up routine! You need to train with PURPOSE and POWER to see real changes in your physique. My Team Rock trainers would have you DOUBLED OVER after the first 15 minutes!\n\n`;
+      mockAssessment += `Your ${gender} body is capable of so much more than what you're currently demanding from it. I've trained thousands of people and seen incredible transformations when they commit to the process with everything they've got!\n\n`;
+      mockAssessment += `With your frame and structure, you have the potential to build an IMPRESSIVE physique that will turn heads. But it takes DEDICATION and the RIGHT TRAINING APPROACH – no shortcuts, no excuses!\n\n`;
+      mockAssessment += `I don't care what time you have to wake up – 4AM, 5AM – you MAKE THE TIME for your workouts! When I was shooting 14-hour days, I still hit the Iron Paradise at 2AM if that's what it took! That's the level of COMMITMENT you need!\n\n`;
       
       mockAssessment += `WEEKLY WORKOUT SCHEDULE:\n\n`;
       
@@ -183,7 +192,7 @@ router.post('/fitness-assessment', async (req, res) => {
       "Format their names in bold (e.g., **GORDON RAMSAY:**) at the beginning of their sections. " + 
       "Put Gordon Ramsay's section FIRST, followed by The Rock's section. " +
       "IMPORTANT - FORMATTING RULES: " +
-      "1. Start each persona with a DETAILED INTRODUCTION of at least 6-8 lines that directly addresses the user's stats and needs. " +
+      "1. Start each persona with a DETAILED INTRODUCTION of at least 10-12 lines that directly addresses the user's stats and needs. GORDON's intro should focus EXCLUSIVELY on DIET, FOOD QUALITY, and WEIGHT issues. THE ROCK's intro should focus EXCLUSIVELY on EXERCISE, TRAINING, and MACROS. Make these intros DISTINCTLY DIFFERENT in content and tone. " +
       "2. Format all section titles in ALL CAPS followed by a colon (e.g., 'MEAL PLAN:'). " +
       "3. Use CONSISTENT spacing - always put ONE blank line before and after each section title. " +
       "4. For bullet points, use the standard bullet symbol '•' (not circles or other symbols). " +
@@ -209,7 +218,9 @@ router.post('/fitness-assessment', async (req, res) => {
     
     First section (GORDON RAMSAY):
     - Start with "**GORDON RAMSAY:**" in bold
-    - Begin with an EXTENDED INTRODUCTION (at least 6-8 lines) that passionately addresses their situation
+    - Begin with an EXTENDED INTRODUCTION (at least 10-12 lines) that passionately addresses their situation
+    - This introduction should FOCUS EXCLUSIVELY on their DIET ISSUES, FOOD QUALITY, and WEIGHT PROBLEMS
+    - Include specific mentions of how poor food choices are affecting their body at their specific age/weight/height
     - Focus EXCLUSIVELY on DIET and NUTRITION to help them reach their weight goal
     - Channel Gordon's EXPLOSIVE personality with UNCENSORED passion (using f***, etc.)
     - RAGE about their need to ${currentWeight > targetWeight ? 'LOSE' : 'GAIN'} ${Math.abs(currentWeight - targetWeight)}kg
@@ -225,7 +236,9 @@ router.post('/fitness-assessment', async (req, res) => {
     
     Second section (THE ROCK): 
     - Start with "**THE ROCK:**" in bold
-    - Begin with an EXTENDED INTRODUCTION (at least 6-8 lines) that motivationally addresses their situation
+    - Begin with an EXTENDED INTRODUCTION (at least 10-12 lines) that motivationally addresses their situation
+    - This introduction should FOCUS EXCLUSIVELY on their TRAINING NEEDS, EXERCISE HABITS, and MACRO REQUIREMENTS
+    - Include specific references to how proper training will transform their body at their specific age/weight/height
     - Focus EXCLUSIVELY on EXERCISE and TRAINING to help them reach their weight goal
     - Use The Rock's ACTUAL catchphrases and speaking style
     - Include at least one reference to his own training or "Team Rock" approach
@@ -432,98 +445,87 @@ router.post('/fitness-assessment', async (req, res) => {
         // Gordon Ramsay's part (now first) - Focus on diet and weight
         fallbackAssessment += `**GORDON RAMSAY:**\n\n`;
         fallbackAssessment += `WAKE UP, YOU ${isWeightLoss ? 'OVERWEIGHT' : 'UNDERWEIGHT'} DISASTER! At ${currentWeight}kg with a BMI of ${bmi}, you need to ${isWeightLoss ? 'LOSE' : 'GAIN'} ${Math.abs(weightDiff)}kg! Your current diet is ABSOLUTELY PATHETIC!\n\n`;
-        fallbackAssessment += `Look at you - a ${age}-year-old ${gender} with a ${activityLevel} activity level trying to reach ${targetWeight}kg. BLOODY HELL! I've seen better nutrition plans written on a FAST FOOD WRAPPER! Your eating habits are DESTROYING your body, and at ${currentHeight}cm tall, you can't afford to keep this up!\n\n`;
-        fallbackAssessment += `I'M NOT FINISHED! Your metabolism is CRYING OUT FOR HELP! With every meal of processed garbage, you're sabotaging what could be a PERFECTLY GOOD body! It's time to WAKE UP and fix this DISASTER you call a diet!\n\n`;
+        fallbackAssessment += `Look at your EATING HABITS - they're a F***ING NIGHTMARE! Your metabolism is suffering from the GARBAGE you're putting in your body! At ${age} years old, you can't afford to keep poisoning yourself with processed RUBBISH!\n\n`;
+        fallbackAssessment += `Your ${gender} body needs PROPER NUTRITION, not the cheap junk you've been shoving down your throat! With your height of ${currentHeight}cm, your food choices should be PRISTINE, not this DISASTER! You've been neglecting QUALITY INGREDIENTS and it SHOWS!\n\n`;
+        fallbackAssessment += `I've seen better diets in PRISON CAFETERIAS! Every calorie of JUNK is pushing you further from your target weight of ${targetWeight}kg! This stops NOW or you'll never see results! Your ${activityLevel} activity level means NOTHING if your diet is TRASH!\n\n`;
         
         fallbackAssessment += `FOOD COMMANDMENTS:\n\n`;
         
-        fallbackAssessment += `• CUT THE CRAP: No more processed foods - they're DESTROYING your ${age}-year-old body! With your ${activityLevel} activity level, this garbage is SABOTAGING you!\n\n`;
+        fallbackAssessment += `• CUT OUT PROCESSED FOODS IMMEDIATELY! I want whole, fresh ingredients ONLY!
+• PORTION CONTROL! Your plate should be colorful with vegetables taking up HALF the space!
+• MEAL PREP! Stop the excuses about not having time to cook proper meals!
+• HYDRATE PROPERLY! Water, not sugary drinks that are DESTROYING your metabolism!
+• EAT LEAN PROTEINS with EVERY meal to build your muscle and recovery!
+
+**THE ROCK:**
+
+CAN YOU SMELLLLL WHAT THE ROCK IS COOKING? [raises eyebrow] Let me tell you something about TRAINING and TRANSFORMING that body!
+
+I've been in the fitness game for DECADES, pushing my body to the absolute limit. And I can tell you that we need to REVOLUTIONIZE your training program to hit your target!
+
+Your current workout routine is WEAK, jabroni! Your body has UNTAPPED POTENTIAL for building lean muscle and boosting your metabolism! The right exercise protocol will completely transform your body composition!
+
+When I was transforming for roles like Black Adam and Hobbs, I learned that proper MACROS and TRAINING FREQUENCY are the keys to success. We need to focus on progressive overload and recovery cycles to optimize results!
+
+The INTENSITY of your current workouts wouldn't even make my warm-up routine! You need to train with PURPOSE and POWER to see real changes in your physique. My Team Rock trainers would have you DOUBLED OVER after the first 15 minutes!
+
+Your body is capable of so much more than what you're currently demanding from it. I've trained thousands of people and seen incredible transformations when they commit to the process with everything they've got!
+
+With your frame and structure, you have the potential to build an IMPRESSIVE physique that will turn heads. But it takes DEDICATION and the RIGHT TRAINING APPROACH – no shortcuts, no excuses!
+
+I don't care what time you have to wake up – 4AM, 5AM – you MAKE THE TIME for your workouts! When I was shooting 14-hour days, I still hit the Iron Paradise at 2AM if that's what it took!
+
+That's the level of COMMITMENT you need! Are you ready to do the work? Because The Rock says your success depends on YOUR discipline and consistency!
+
+WEEKLY WORKOUT SCHEDULE:
+
+1. MONDAY: CHEST & TRICEPS - Heavy bench press, incline dumbbell press, chest flys, tricep dips
+2. TUESDAY: BACK & BICEPS - Deadlifts, rows, pull-ups, hammer curls
+3. WEDNESDAY: CARDIO & CORE - 30 min HIIT, abdominal circuit, planks, medicine ball work
+4. THURSDAY: SHOULDERS & LEGS - Military press, squats, lunges, calf raises
+5. FRIDAY: FULL BODY CIRCUIT - Compound movements, minimal rest periods
+6. SATURDAY: ACTIVE RECOVERY - Light cardio, stretching, mobility work
+7. SUNDAY: REST - But meal prep for the entire week! NO EXCUSES!
+
+FINAL WORD:
+
+**GORDON AND THE ROCK:**
+
+Look, we're giving you the blueprint here! The rest is up to YOU. No excuses, no shortcuts! Follow our instructions EXACTLY, and you WILL see results. We've transformed countless bodies, and yours is next!
+
+Track everything - your food, your workouts, your progress. Take weekly photos to document your journey. This isn't just about weight - it's about TRANSFORMING your entire lifestyle!
+
+We'll be watching your progress - DON'T DISAPPOINT US! Now get to work and show us what you're made of! YOUR FITNESS JOURNEY STARTS RIGHT NOW!`;
         
-        fallbackAssessment += `• PROTEIN IS YOUR SAVIOR: Lean meats, fish, eggs at EVERY meal. For someone ${currentHeight}cm tall, you need quality protein to maintain muscle while you ${isWeightLoss ? 'shed fat' : 'build mass'}!\n\n`;
-        
-        fallbackAssessment += `• VEGETABLES ARE NON-NEGOTIABLE: Triple your vegetable intake NOW - green vegetables at EVERY meal or don't bother asking for my help again!\n\n`;
-        
-        fallbackAssessment += `MEAL PLAN:\n\n`;
-        
-        fallbackAssessment += `• Breakfast: ${isWeightLoss ? "Egg white omelette with spinach and tomatoes" : "Whole eggs with avocado toast and smoked salmon"}\n\n`;
-        
-        fallbackAssessment += `• Lunch: Grilled chicken breast, steamed broccoli, ${isWeightLoss ? "¼ cup brown rice" : "1 cup brown rice"}\n\n`;
-        
-        fallbackAssessment += `• Dinner: Baked salmon, asparagus, ${isWeightLoss ? "small sweet potato" : "large sweet potato"}\n\n`;
-        
-        fallbackAssessment += `• Snack: Greek yogurt with berries ${isWeightLoss ? "(MEASURE IT PRECISELY!)" : "and a handful of nuts"}\n\n`;
-        
-        fallbackAssessment += `NOW GET COOKING AND STOP WASTING MY TIME!\n\n`;
-        
-        // The Rock's part - Focus on exercise frequency and concrete steps
-        fallbackAssessment += `**THE ROCK:**\n\n`;
-        fallbackAssessment += `CAN YOU SMELLLLL WHAT THE ROCK IS COOKING? [raises eyebrow] It's a workout plan to transform your ${gender}, ${age}-year-old, ${currentWeight}kg body! FOCUS. DISCIPLINE. CONSISTENCY.\n\n`;
-        fallbackAssessment += `Listen up! When I was grinding to make it in the WWE, then transitioning to Hollywood, I learned that the foundation of success is HARD WORK. At your height of ${currentHeight}cm, weighing ${currentWeight}kg, with a ${activityLevel} activity level, you've got a PERFECT opportunity to transform!\n\n`;
-        fallbackAssessment += `This isn't just any workout plan, jabroni. This is a SPECIFICALLY DESIGNED regimen for someone with YOUR exact body metrics. I've trained thousands of people, and when I see someone looking to ${isWeightLoss ? 'lose' : 'gain'} ${Math.abs(weightDiff)}kg, I know EXACTLY what they need!\n\n`;
-        
-        fallbackAssessment += `WEEKLY WORKOUT SCHEDULE:\n\n`;
-        
-        fallbackAssessment += `• Monday - PUSH DAY: Chest/shoulders/triceps - 4×10 reps, 60sec rest\n\n`;
-        
-        fallbackAssessment += `• Tuesday - CARDIO: 35min HIIT intervals (30sec work/30sec rest)\n\n`;
-        
-        fallbackAssessment += `• Wednesday - PULL DAY: Back/biceps - 4×10 reps, 60sec rest\n\n`;
-        
-        fallbackAssessment += `• Thursday - RECOVERY: 30min walk + 15min stretching\n\n`;
-        
-        fallbackAssessment += `• Friday - LEG DAY: Squats/lunges/deadlifts - 4×10 reps, 75sec rest\n\n`;
-        
-        fallbackAssessment += `• Saturday - CARDIO: 45min steady state + core work\n\n`;
-        
-        fallbackAssessment += `• Sunday - REST DAY: Complete recovery (but meal prep for the week!)\n\n`;
-        
-        fallbackAssessment += `THE BOTTOM LINE: Given your ${activityLevel} lifestyle, you MUST train 5-6 days/week. Add weight or reps each week - PROGRESSIVE OVERLOAD! At ${currentHeight}cm tall with a goal weight of ${targetWeight}kg, consistency is your best friend. NO SHORTCUTS, NO EXCUSES - JUST RESULTS!\n\n`;
-        
-        // Fallback macro goals as actual numbers
-        const fallbackMacroGoals = {
-          protein: Math.round(currentWeight * (isWeightLoss ? 2.2 : 1.8)),
-          carbs: Math.round(currentWeight * (isWeightLoss ? 2 : 3)),
-          fats: Math.round(currentWeight * (isWeightLoss ? 0.8 : 1)),
-          calories: Math.round(currentWeight * (isWeightLoss ? 22 : 28))
-        };
-        
-        // Ensure these are numbers, not strings
-        Object.keys(fallbackMacroGoals).forEach(key => {
-          if (typeof fallbackMacroGoals[key] !== 'number' || isNaN(fallbackMacroGoals[key])) {
-            // Set default values if not a valid number
-            const defaults = { protein: 130, carbs: 150, fats: 60, calories: 1800 };
-            fallbackMacroGoals[key] = defaults[key] || 0;
-          }
-        });
-        
-        // Add macro goals to the fallback assessment
-        fallbackAssessment += `**MACRO GOALS:**\n`;
-        fallbackAssessment += `Protein: ${fallbackMacroGoals.protein} grams per day\n`;
-        fallbackAssessment += `Carbs: ${fallbackMacroGoals.carbs} grams per day\n`;
-        fallbackAssessment += `Fats: ${fallbackMacroGoals.fats} grams per day\n`;
-        fallbackAssessment += `Calories: ${fallbackMacroGoals.calories} calories per day`;
-        
-        // Store the fallback macro goals in the user profile
-        try {
-          const filePath = path.join(PROFILES_DIR, `${userId}.json`);
+        // Simulate progress updates
+        if (socketId) {
+          // Simulate processing stages
+          setTimeout(() => {
+            io.to(socketId).emit('transcriptionProgress', {
+              stage: 'processing',
+              progress: 50,
+              message: 'Processing audio...'
+            });
+          }, 1000);
           
-          if (fs.existsSync(filePath)) {
-            const userProfileRaw = fs.readFileSync(filePath, 'utf8');
-            const userProfile = JSON.parse(userProfileRaw);
-            
-            // Update profile with fallback macro goals
-            userProfile.macroGoals = fallbackMacroGoals;
-            userProfile.updatedAt = new Date().toISOString();
-            
-            fs.writeFileSync(filePath, JSON.stringify(userProfile, null, 2));
-            debug('User profile updated with fallback macro goals after token limit error');
-          }
-        } catch (profileError) {
-          debug('Error updating user profile with fallback macro goals:', profileError.message);
+          setTimeout(() => {
+            io.to(socketId).emit('transcriptionProgress', {
+              stage: 'finalizing',
+              progress: 80,
+              message: 'Finalizing transcription...'
+            });
+          }, 2000);
+          
+          setTimeout(() => {
+            io.to(socketId).emit('transcriptionProgress', {
+              stage: 'completed',
+              progress: 100,
+              message: 'Transcription complete!'
+            });
+          }, 3000);
         }
         
-        // Return the fallback assessment with a note about API limits
-        debug('Sending fallback assessment to client due to token limit issues');
+        debug('Sending mock transcription response');
         return res.json({
           assessment: fallbackAssessment + "\n\n[Note: This is a simplified assessment due to API token limits. For a more detailed assessment, try with a more powerful API key.]",
           macroGoals: fallbackMacroGoals
