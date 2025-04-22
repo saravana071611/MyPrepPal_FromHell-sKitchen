@@ -7,7 +7,7 @@ const Footer = () => {
       <div className="container">
         <div className="footer-content">
           <div className="footer-branding">
-            <h3>Hell's Kitchen</h3>
+            <h3><span className="highlight">Prep-Pal</span> from Hell</h3>
             <p>A Gordon Ramsay-inspired health & fitness app</p>
           </div>
           
@@ -33,7 +33,7 @@ const Footer = () => {
         </div>
         
         <div className="footer-bottom">
-          <p>&copy; {new Date().getFullYear()} Hell's Kitchen Fitness App. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} Prep-Pal from Hell Fitness App. All rights reserved.</p>
           <p>This is a demo app and not affiliated with Gordon Ramsay or Hell's Kitchen.</p>
         </div>
       </div>

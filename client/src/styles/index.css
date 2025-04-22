@@ -46,6 +46,11 @@ button {
   text-align: center;
 }
 
+.highlight {
+  color: var(--red-team);
+  font-weight: 700;
+}
+
 .mt-2 {
   margin-top: 1rem;
 }

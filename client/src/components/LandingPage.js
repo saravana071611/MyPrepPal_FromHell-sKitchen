@@ -225,7 +225,7 @@ const LandingPage = ({ apiStatus, refreshApiStatus }) => {
       <div className="container">
         <div className="hero-section">
           <div className="hero-content">
-            <h1>Welcome to Hell's Kitchen</h1>
+            <h1><span className="highlight">Prep-Pal</span> from Hell</h1>
             <p>A Gordon Ramsay-inspired fitness & nutrition app that's as brutal as it is effective!</p>
             <div className="hero-buttons">
               <Link to="/profile" className="btn btn-primary">Create Your Profile</Link>
