@@ -93,12 +93,14 @@ export const apiClient = {
   
   // YouTube API calls
   getVideoInfo: (videoUrl) => {
-    return api.get(`/api/youtube/video-info?videoUrl=${encodeURIComponent(videoUrl)}`);
+    return api.get(`/api/youtube/video-info?videoUrl=${encodeURIComponent(videoUrl)}`, {
+      timeout: 30000 // 30 second timeout for YouTube info requests
+    });
   },
   
   extractAudio: (videoUrl) => {
     return api.post('/api/youtube/extract-audio', { videoUrl }, {
-      timeout: 120000 // 2 minutes for audio extraction
+      timeout: 180000 // 3 minutes for audio extraction
     });
   },
   

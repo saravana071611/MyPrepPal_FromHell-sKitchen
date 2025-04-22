@@ -27,13 +27,64 @@
   position: relative;
 }
 
+/* Enhanced error message styles */
 .error-message {
+  background-color: rgba(230, 57, 70, 0.1);
+  color: var(--red-team);
+  padding: 0;
+  margin-bottom: 1.5rem;
+  border-radius: 8px;
+  border: 1px solid rgba(230, 57, 70, 0.3);
+  overflow: hidden;
+}
+
+.error-title {
   background-color: rgba(230, 57, 70, 0.2);
   color: var(--red-team);
+  padding: 0.7rem 1rem;
+  font-weight: bold;
+  font-size: 1.1rem;
+  border-bottom: 1px solid rgba(230, 57, 70, 0.3);
+}
+
+.error-content {
   padding: 1rem;
-  margin-bottom: 1.5rem;
+}
+
+.error-content p {
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+  color: var(--red-team);
+}
+
+.error-help {
+  margin-top: 0.75rem;
+  background-color: rgba(0, 0, 0, 0.1);
+  padding: 0.75rem;
   border-radius: 4px;
-  text-align: center;
+}
+
+.error-help p {
+  color: var(--light-text);
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.error-help ul {
+  padding-left: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.error-help li {
+  color: var(--light-text);
+  font-size: 0.9rem;
+  margin-bottom: 0.25rem;
+}
+
+.error-help a {
+  color: var(--accent-color);
+  text-decoration: underline;
+  font-weight: bold;
 }
 
 /* Step indicator */
@@ -112,6 +163,177 @@
 
 .recipe-form {
   margin-top: 1.5rem;
+}
+
+/* URL input container with loading indicator */
+.url-input-container {
+  position: relative;
+  width: 100%;
+}
+
+.input-loading-indicator {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(230, 57, 70, 0.2);
+  border-radius: 50%;
+  border-top-color: var(--red-team);
+  animation: spin 1s infinite linear;
+}
+
+@keyframes spin {
+  0% { transform: translateY(-50%) rotate(0deg); }
+  100% { transform: translateY(-50%) rotate(360deg); }
+}
+
+/* Enhanced form hint styles */
+.form-hint {
+  color: #888;
+  font-size: 0.85rem;
+  margin-top: 0.3rem;
+  margin-left: 0.2rem;
+}
+
+.form-hint p {
+  margin: 0.25rem 0;
+}
+
+.form-hint a {
+  color: var(--accent-color);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.form-hint a:hover {
+  text-decoration: underline;
+}
+
+.hint-details {
+  font-size: 0.75rem;
+  color: #777;
+  font-style: italic;
+}
+
+/* Processing status styles */
+.processing-status {
+  margin-top: 1rem;
+  background-color: rgba(0, 0, 0, 0.15);
+  border-radius: 6px;
+  padding: 1rem;
+}
+
+.progress-info {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0.75rem;
+}
+
+.stage-info {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.stage-label {
+  font-weight: bold;
+  color: var(--accent-color);
+  margin-right: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.stage-value {
+  color: var(--light-text);
+  font-size: 0.9rem;
+}
+
+.time-info {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.elapsed-time, .remaining-time {
+  display: flex;
+  align-items: center;
+  margin-right: 1rem;
+  margin-bottom: 0.25rem;
+}
+
+.time-label {
+  color: #aaa;
+  font-size: 0.8rem;
+  margin-right: 0.5rem;
+}
+
+.time-value {
+  color: var(--light-text);
+  font-size: 0.85rem;
+  font-family: monospace;
+  font-weight: bold;
+}
+
+.progress-bar-container {
+  height: 8px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(to right, var(--accent-color), var(--red-team));
+  border-radius: 4px;
+  transition: width 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.progress-bar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.2) 25%,
+    rgba(255, 255, 255, 0.3) 50%,
+    rgba(255, 255, 255, 0.2) 75%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Loading message */
+.loading-message {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background-color: rgba(69, 123, 157, 0.1);
+  border-left: 3px solid var(--accent-color);
+  border-radius: 3px;
+}
+
+.loading-message p {
+  color: var(--light-text);
+  margin: 0 0 0.75rem 0;
+  font-size: 0.9rem;
 }
 
 /* Step 2: Video Info Container */
@@ -292,5 +514,13 @@
   
   .step-label {
     display: none;
+  }
+  
+  .time-info {
+    flex-direction: column;
+  }
+  
+  .elapsed-time, .remaining-time {
+    margin-right: 0;
   }
 }
