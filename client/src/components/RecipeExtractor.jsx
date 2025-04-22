@@ -138,7 +138,9 @@ const RecipeExtractor = () => {
     
     try {
       // Call the extract-and-transcribe endpoint
+      console.log('Starting extraction and transcription for URL:', videoUrl);
       const response = await apiClient.extractAndTranscribe(videoUrl);
+      console.log('Extraction response received:', response.data);
       
       if (response.data && response.data.transcription) {
         setTranscript(response.data.transcription);
@@ -147,11 +149,13 @@ const RecipeExtractor = () => {
         await analyzeRecipe(response.data.transcription);
       } else {
         // If we got a response but no transcription, try to get recipe from video title
+        console.warn('No transcription in response data:', response.data);
         setProgress({ stage: 'fallback', progress: 70, message: 'Audio extraction failed. Generating recipe from video title...' });
         await getFallbackRecipe();
       }
     } catch (err) {
       console.error('Error extracting audio:', err);
+      console.error('Error details:', err.response?.data);
       
       // Clear previous errors to show we're trying fallback
       setError('');

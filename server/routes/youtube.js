@@ -15,30 +15,126 @@ ffmpeg.setFfmpegPath(ffmpegPath);
 async function extractAudioWithYoutubeDl(videoUrl, outputFilePath) {
   try {
     console.log('Using youtube-dl-exec for extraction');
+    console.log('Output file path:', outputFilePath);
     
-    // Create temp filename for the downloaded audio
-    const tempOutputPath = outputFilePath + '.temp';
+    // Ensure output directory exists
+    const outputDir = path.dirname(outputFilePath);
+    if (!fs.existsSync(outputDir)) {
+      console.log('Creating output directory for youtube-dl-exec:', outputDir);
+      fs.mkdirSync(outputDir, { recursive: true });
+    }
+    
+    // Get just the filename without extension
+    const fileBaseName = path.basename(outputFilePath, path.extname(outputFilePath));
+    const outputDir2 = path.dirname(outputFilePath);
+    const tempOutputPath = path.join(outputDir2, `${fileBaseName}_temp`);
+    
+    console.log('Using temporary output path:', tempOutputPath);
     
     // Execute youtube-dl to download audio directly to mp3
-    await youtubeDl(videoUrl, {
-      extractAudio: true,
-      audioFormat: 'mp3',
-      audioQuality: 0, // Best quality
-      output: tempOutputPath,
-      noCheckCertificate: true,
-      noWarnings: true,
-      preferFreeFormats: true,
-      addHeader: [
-        'referer:youtube.com',
-        'user-agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-      ]
-    });
+    try {
+      const result = await youtubeDl(videoUrl, {
+        extractAudio: true,
+        audioFormat: 'mp3',
+        audioQuality: 0, // Best quality
+        output: tempOutputPath,
+        noCheckCertificate: true,
+        verbose: true,
+        preferFreeFormats: true,
+        addHeader: [
+          'referer:youtube.com',
+          'user-agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        ]
+      });
+      
+      console.log('youtube-dl-exec completed successfully');
+      console.log('Command output:', result);
+    } catch (dlError) {
+      console.error('Error with youtube-dl-exec:', dlError.message);
+      
+      // Try with direct yt-dlp command as a last resort
+      console.log('Trying direct yt-dlp command as last resort...');
+      await new Promise((resolve, reject) => {
+        const args = [
+          videoUrl,
+          '--extract-audio',
+          '--audio-format', 'mp3',
+          '--audio-quality', '0',
+          '-o', tempOutputPath,
+          '--no-check-certificate'
+        ];
+        
+        console.log(`Executing: yt-dlp ${args.join(' ')}`);
+        const child = require('child_process').spawn('yt-dlp', args);
+        
+        child.stdout.on('data', (data) => {
+          console.log(`yt-dlp output: ${data}`);
+        });
+        
+        child.stderr.on('data', (data) => {
+          console.error(`yt-dlp error: ${data}`);
+        });
+        
+        child.on('close', (code) => {
+          if (code === 0) {
+            console.log('Direct yt-dlp command completed successfully');
+            resolve();
+          } else {
+            console.error(`Direct yt-dlp command failed with code ${code}`);
+            reject(new Error(`yt-dlp exited with code ${code}`));
+          }
+        });
+      });
+    }
     
-    // Rename temp file to final filename
-    fs.renameSync(tempOutputPath, outputFilePath);
+    // After download, check for the file - youtube-dl-exec adds .mp3 extension
+    const expectedOutputPath = `${tempOutputPath}.mp3`;
+    console.log('Checking for file at:', expectedOutputPath);
     
-    console.log(`Successfully extracted audio using youtube-dl-exec to: ${outputFilePath}`);
-    return true;
+    if (fs.existsSync(expectedOutputPath)) {
+      // File exists, copy to the requested output path
+      fs.copyFileSync(expectedOutputPath, outputFilePath);
+      console.log(`File copied from ${expectedOutputPath} to ${outputFilePath}`);
+      
+      // Check file size
+      const stats = fs.statSync(outputFilePath);
+      console.log(`Output file size: ${(stats.size / (1024 * 1024)).toFixed(2)} MB`);
+      
+      // Clean up temp file
+      try {
+        fs.unlinkSync(expectedOutputPath);
+        console.log('Temp file cleaned up');
+      } catch (cleanupError) {
+        console.log('Note: Could not clean up temp file:', cleanupError.message);
+      }
+      
+      return true;
+    } else {
+      // If exact expected path not found, search for any mp3 file with similar name
+      console.log('Expected output file not found, searching for alternative files...');
+      
+      const dirContents = fs.readdirSync(outputDir);
+      console.log('Files in directory:', dirContents);
+      
+      // Look for mp3 files
+      const mp3Files = dirContents.filter(file => 
+        file.endsWith('.mp3') && file.includes(path.basename(tempOutputPath))
+      );
+      
+      if (mp3Files.length > 0) {
+        const foundFile = mp3Files[0];
+        const foundPath = path.join(outputDir, foundFile);
+        console.log(`Found alternative file: ${foundPath}`);
+        
+        // Copy to the requested output path
+        fs.copyFileSync(foundPath, outputFilePath);
+        console.log(`File copied from ${foundPath} to ${outputFilePath}`);
+        
+        return true;
+      }
+      
+      throw new Error('No output audio file found after youtube-dl-exec extraction');
+    }
   } catch (error) {
     console.error('Error using youtube-dl-exec:', error.message);
     throw error;
@@ -571,10 +667,36 @@ router.post('/extract-and-transcribe', async (req, res) => {
     
     const outputDir = path.join(__dirname, '../temp');
     
-    // Ensure output directory exists
-    if (!fs.existsSync(outputDir)) {
+    // Debug: Check if temp directory exists and is writable
+    const dirExists = fs.existsSync(outputDir);
+    console.log(`Temp directory exists: ${dirExists}`);
+    if (!dirExists) {
       console.log('Creating output directory:', outputDir);
-      fs.mkdirSync(outputDir, { recursive: true });
+      try {
+        fs.mkdirSync(outputDir, { recursive: true });
+        console.log('Directory created successfully');
+      } catch (dirError) {
+        console.error('Error creating temp directory:', dirError);
+        return res.status(500).json({ 
+          error: 'Failed to create temp directory', 
+          details: dirError.message 
+        });
+      }
+    }
+    
+    // Verify the directory is writable by writing a test file
+    try {
+      const testFile = path.join(outputDir, `test_${Date.now()}.txt`);
+      fs.writeFileSync(testFile, 'Test file for directory write permission');
+      console.log('Successfully wrote test file to temp directory');
+      // Clean up test file
+      fs.unlinkSync(testFile);
+    } catch (writeError) {
+      console.error('Directory is not writable:', writeError);
+      return res.status(500).json({ 
+        error: 'Temp directory is not writable', 
+        details: writeError.message 
+      });
     }
     
     // Generate a unique filename based on timestamp
@@ -732,6 +854,12 @@ router.post('/extract-and-transcribe', async (req, res) => {
       
       // Check file exists and has content
       if (!fs.existsSync(outputFilePath)) {
+        console.error('Output file does not exist after download:', outputFilePath);
+        
+        // Check the temp directory to see if any files were created
+        const files = fs.readdirSync(outputDir);
+        console.log('Files in temp directory:', files);
+        
         throw new Error('Output audio file was not created');
       }
       
@@ -739,6 +867,7 @@ router.post('/extract-and-transcribe', async (req, res) => {
       console.log(`Output file size: ${Math.round(stats.size / 1024)} KB`);
       
       if (stats.size < 1024) {
+        console.error('Audio file is too small:', stats.size, 'bytes');
         throw new Error('Extracted audio file is too small, extraction may have failed');
       }
       
