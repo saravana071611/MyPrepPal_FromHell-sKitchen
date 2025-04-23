@@ -69,6 +69,7 @@ router.post('/recipe-analysis', async (req, res) => {
     const cookingInstructionsPrompt = `${conciseInstructions}
       Provide streamlined cooking instructions for a healthier version of this recipe.
       Use numbered steps and focus on clear, action-oriented directions.
+      Format each step as a bullet point for better readability.
       Include meal prep and portioning instructions.
       
       Recipe Title: ${useVideoInfo.title}
@@ -77,7 +78,7 @@ router.post('/recipe-analysis', async (req, res) => {
     const nutritionInfoPrompt = `${conciseInstructions}
       Provide brief nutrition information for this healthier recipe version.
       Include macros per portion, calories, key nutrients, and who this meal is ideal for.
-      Format as bullet points or very short paragraphs.
+      Format as bullet points for better readability.
       
       Recipe Title: ${useVideoInfo.title}
       Transcription: ${useTranscription}`;
@@ -85,7 +86,7 @@ router.post('/recipe-analysis', async (req, res) => {
     const storageInstructionsPrompt = `${conciseInstructions}
       Provide brief, practical storage and reheating instructions for meal prep.
       Cover recommended containers, storage duration, and best reheating methods.
-      Format as numbered points or very short paragraphs.
+      Format as bullet points for better readability.
       
       Recipe Title: ${useVideoInfo.title}
       Transcription: ${useTranscription}`;
@@ -181,4 +182,4 @@ router.post('/recipe-analysis', async (req, res) => {
       details: error.message
     });
   }
-}); 
+});

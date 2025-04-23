@@ -1,0 +1,11 @@
+{
+  "status": "completed",
+  "message": "Recipe processing completed successfully",
+  "result": {
+    "mealPrepInfo": {
+      "groceryList": "1. 500g lean mutton, diced\n2. 2 tablespoons vegetable oil\n3. 1 large onion, finely chopped\n4. 2 cloves garlic, minced\n5. 1 inch fresh ginger, grated\n6. 2 large ripe tomatoes, diced\n7. 1 tablespoon fresh coriander, finely chopped\n8. 1 teaspoon cumin seeds\n9. 1 teaspoon turmeric powder\n10. 1 teaspoon red chilli powder\n11. 1/2 teaspoon garam masala\n12. 2 litres water\n13. Salt to taste\n14. Fresh mint leaves for garnish\n15. Lemon wedges for serving",
+      "cookingMethod": "1. Purchase lean cuts of mutton, fresh vegetables, and herbs.\n2. Rinse mutton under cold water and pat dry with paper towels.\n3. Season mutton with salt and pepper on both sides. \n4. Preheat a large pot over medium-high heat.\n5. Add a tablespoon of olive oil to the pot.\n6. Add mutton to pot, searing each side for about 4 minutes until browned.\n7. Remove mutton from pot and set aside.\n8. Lower heat to medium and add chopped onions, carrots, celery, and garlic to the pot. \n9. Sauté vegetables until softened, about 5-7 minutes.\n10. Add 2 tablespoons of tomato paste into the pot and stir until vegetables are well coated.\n11. Add mutton back into the pot and pour in 6 cups of beef broth.\n12. Bring pot to a boil, then reduce heat to low and simmer for about 2 hours.\n13. After simmering, skim off any excess fat from the top of the shorba.\n14. Add a handful of chopped fresh herbs such as parsley, coriander, and mint.\n15. Let shorba simmer for another 10 minutes to allow herbs to infuse.\n16. Season shorba with salt and pepper to taste.\n17. Ladle shorba into bowls and serve hot.\n18. Store remaining portions in separate airtight containers in the fridge for up to 5 days."
+    },
+    "timestamp": "2025-04-23T05:12:14.858Z"
+  }
+}

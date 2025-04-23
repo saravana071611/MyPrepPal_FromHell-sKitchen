@@ -1,0 +1,11 @@
+{
+  "status": "completed",
+  "message": "Recipe processing completed successfully",
+  "result": {
+    "mealPrepInfo": {
+      "groceryList": "1. 2 tablespoons unsalted butter\n2. 1/4 cup low-fat milk\n3. 1 fresh yellow onion, diced\n4. 3 medium carrots, peeled and chopped\n5. 2 cloves garlic, minced\n6. 2 stalks organic celery, chopped\n7. 1 cup fresh broccoli florets\n8. 1 cup fresh cauliflower florets\n9. 1 teaspoon sea salt\n10. 1/2 teaspoon freshly ground black pepper\n11. 1/4 teaspoon paprika\n12. 1/4 teaspoon cayenne pepper\n13. 1/2 cup frozen peas\n14. 1 tablespoon fresh parsley, chopped\n15. 1 tablespoon fresh thyme leaves.",
+      "cookingMethod": "1. Preheat the oven to 400°F. \n2. Wash and chop all vegetables into bite-sized pieces. \n3. Toss vegetables in olive oil, season with salt and pepper.\n4. Spread vegetables evenly on a baking sheet.\n5. Bake the vegetables in the oven for 20 minutes.\n6. While vegetables are baking, season your chicken with salt and pepper.\n7. Heat two tablespoons of oil in a frying pan over medium-high heat.\n8. Add chicken to the pan and sear for 5 minutes on each side.\n9. Transfer the seared chicken to a baking dish.\n10. Bake in the preheated oven for 20 minutes until chicken reaches an internal temperature of 165°F.\n11. While chicken is baking, heat a saucepan over medium heat.\n12. Add two tablespoons of butter to the saucepan.\n13. Once butter is melted, whisk in two tablespoons of flour to create a roux.\n14. Gradually add one cup of low-fat milk to the roux, whisking constantly. \n15. Season the sauce with salt and pepper to taste.\n16. Remove chicken and vegetables from the oven.\n17. Drizzle sauce over chicken and vegetables.\n18. Divide the meal evenly into five portions for meal prep."
+    },
+    "timestamp": "2025-04-23T05:03:09.606Z"
+  }
+}
