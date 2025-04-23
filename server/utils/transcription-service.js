@@ -239,7 +239,7 @@ class TranscriptionService {
       file: audioFile,
       model: options.model || 'whisper-1',
       language: options.language || 'en',
-      response_format: options.format || 'verbose_json',
+      response_format: 'text',
       temperature: options.temperature || 0,
       prompt: options.prompt || ''
     };
@@ -255,6 +255,12 @@ class TranscriptionService {
       const durationSeconds = ((endTime - startTime) / 1000).toFixed(2);
       
       this.log(`Transcription completed in ${durationSeconds} seconds`);
+      
+      // Check if response is already text format
+      if (typeof transcription === 'string') {
+        transcription = { text: transcription };
+      }
+      
       this.log(`Text length: ${transcription.text.length} characters`);
       
       // Update progress

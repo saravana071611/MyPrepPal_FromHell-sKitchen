@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 const path = require('path');
 const fs = require('fs');
-const ytdl = require('ytdl-core');
 const ffmpeg = require('fluent-ffmpeg');
 const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
 const axios = require('axios');
@@ -141,54 +140,45 @@ async function extractAudioWithYoutubeDl(videoUrl, outputFilePath) {
   }
 }
 
-// Custom wrapper for ytdl to handle errors better
-const safeYtdl = (url, options = {}) => {
-  // Use default options with some custom settings for better compatibility
-  const ytdlOptions = {
-    quality: 'lowestaudio',
-    filter: 'audioonly',
-    requestOptions: {
-      headers: {
-        // Use a recent user agent
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-        // Add referer to help with some restrictions
-        'Referer': 'https://www.youtube.com/'
-      }
-    },
+// Helper function for youtube-dl-exec with better error handling
+const safeYoutubeDl = async (url, options = {}) => {
+  // Default options with custom settings for better compatibility
+  const ytdlpOptions = {
+    noCheckCertificate: true,
+    preferFreeFormats: true,
+    addHeader: [
+      'referer:youtube.com',
+      'user-agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+    ],
     ...options
   };
 
   try {
-    return ytdl(url, ytdlOptions);
+    return await youtubeDl(url, ytdlpOptions);
   } catch (error) {
-    console.error('ytdl error:', error.message);
+    console.error('youtube-dl-exec error:', error.message);
     throw error;
   }
 };
 
 // Helper function to extract video ID from various YouTube URL formats
 function extractVideoId(url) {
-  // Try standard ytdl-core method first
-  try {
-    return ytdl.getVideoID(url);
-  } catch (e) {
-    // Fallback to manual extraction if ytdl-core fails
-    const patterns = [
-      /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i, // Standard YouTube URLs
-      /youtube\.com\/shorts\/([^"&?\/\s]{11})/i, // YouTube Shorts URLs
-      /youtube\.com\/watch\?v=([^"&?\/\s]{11})/i, // Direct watch URLs
-      /youtu\.be\/([^"&?\/\s]{11})/i // Short URLs
-    ];
-    
-    for (const pattern of patterns) {
-      const match = url.match(pattern);
-      if (match && match[1]) {
-        return match[1];
-      }
+  // Try manual extraction first
+  const patterns = [
+    /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i, // Standard YouTube URLs
+    /youtube\.com\/shorts\/([^"&?\/\s]{11})/i, // YouTube Shorts URLs
+    /youtube\.com\/watch\?v=([^"&?\/\s]{11})/i, // Direct watch URLs
+    /youtu\.be\/([^"&?\/\s]{11})/i // Short URLs
+  ];
+  
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match && match[1]) {
+      return match[1];
     }
-    
-    throw new Error('Could not extract video ID from URL');
   }
+  
+  throw new Error('Could not extract video ID from URL');
 }
 
 // Try another approach to get video duration and view count
@@ -957,13 +947,13 @@ router.post('/extract-and-transcribe', async (req, res) => {
         file: audioFile,
         model: 'whisper-1',
         language: 'en',
-        response_format: 'json'
+        response_format: 'text'
       });
       
       console.log('Transcription completed successfully');
       
       // Extract the transcribed text
-      const transcribedText = transcription.text;
+      const transcribedText = typeof transcription === 'string' ? transcription : transcription.text;
       
       // Send completed progress
       if (socketId) {
@@ -1071,24 +1061,44 @@ router.get('/video-info', async (req, res) => {
     
     // Try multiple methods to get video info
     try {
-      console.log('Attempting to fetch info with ytdl-core...');
+      console.log('Attempting to fetch info with yt-dlp...');
       
-      // First try with ytdl-core
-      const infoPromise = ytdl.getInfo(cleanUrl);
-      info = await Promise.race([infoPromise, timeoutPromise]);
-      console.log('Successfully fetched video info using ytdl-core');
-    } catch (ytdlError) {
-      console.error('ytdl-core error:', ytdlError.message);
+      // Use youtube-dl-exec instead of ytdl-core
+      const ytdlpResult = await youtubeDl(cleanUrl, {
+        dumpSingleJson: true,
+        noCheckCertificate: true,
+        preferFreeFormats: true,
+        skipDownload: true,
+        simulate: true
+      });
+      
+      console.log('Successfully fetched video info using yt-dlp');
+      
+      // Convert yt-dlp output format to our expected format
+      info = {
+        videoDetails: {
+          title: ytdlpResult.title,
+          lengthSeconds: ytdlpResult.duration,
+          author: { name: ytdlpResult.uploader },
+          viewCount: ytdlpResult.view_count.toString(),
+          publishDate: ytdlpResult.upload_date,
+          description: ytdlpResult.description || '',
+          thumbnails: ytdlpResult.thumbnails || [],
+          videoId: videoId
+        }
+      };
+    } catch (ytdlpError) {
+      console.error('yt-dlp error:', ytdlpError.message);
       usedFallback = true;
       
       try {
-        // Fallback to our custom method if ytdl-core fails
+        // Fallback to our custom method if yt-dlp fails
         console.log('Attempting to use fallback method...');
         info = await fetchVideoInfoFallback(videoId);
         console.log('Successfully fetched video info using fallback method');
       } catch (fallbackError) {
         console.error('Fallback method error:', fallbackError.message);
-        throw new Error(`Failed to fetch video information: ${fallbackError.message || ytdlError.message}`);
+        throw new Error(`Failed to fetch video information: ${fallbackError.message || ytdlpError.message}`);
       }
     }
     

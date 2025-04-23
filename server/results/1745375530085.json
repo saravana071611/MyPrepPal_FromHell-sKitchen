@@ -1,0 +1,7 @@
+{
+  "id": "1745375530085",
+  "status": "error",
+  "message": "400 Invalid parameter: 'response_format' of type 'json_object' is not supported with this model.",
+  "error": "Error: 400 Invalid parameter: 'response_format' of type 'json_object' is not supported with this model.\n    at APIError.generate (C:\\Users\\sarav\\GitRepositories\\MyPrepPal_FromHell-sKitchen\\server\\node_modules\\openai\\error.js:45:20)\n    at OpenAI.makeStatusError (C:\\Users\\sarav\\GitRepositories\\MyPrepPal_FromHell-sKitchen\\server\\node_modules\\openai\\core.js:302:33)\n    at OpenAI.makeRequest (C:\\Users\\sarav\\GitRepositories\\MyPrepPal_FromHell-sKitchen\\server\\node_modules\\openai\\core.js:346:30)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async MealPrepController.generateMealPrepInfo (C:\\Users\\sarav\\GitRepositories\\MyPrepPal_FromHell-sKitchen\\server\\meal-prep-controller.js:805:26)\n    at async MealPrepController.processRecipeVideo (C:\\Users\\sarav\\GitRepositories\\MyPrepPal_FromHell-sKitchen\\server\\meal-prep-controller.js:71:28)\n    at async MealPrepService.processRecipe (C:\\Users\\sarav\\GitRepositories\\MyPrepPal_FromHell-sKitchen\\server\\meal-prep-service.js:43:22)",
+  "timestamp": "2025-04-23T02:32:10.210Z"
+}

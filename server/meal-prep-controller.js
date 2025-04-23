@@ -807,18 +807,30 @@ class MealPrepController {
         messages: [
           {
             role: "system",
-            content: "You are a professional chef and meal prep expert. Your task is to extract recipe information from a video transcript."
+            content: "You are a professional chef and meal prep expert. Your task is to extract recipe information from a video transcript. You must respond with valid JSON only. No explanation, no text outside of the JSON."
           },
           {
             role: "user",
             content: `Extract the recipe name, description, and a list of ingredients with quantities from the following transcript. Format your response as a JSON object with 'recipe' and 'ingredients' properties. The 'recipe' should have 'name' and 'description' properties, and 'ingredients' should be an array of objects with 'name', 'quantity', and 'unit' properties.\n\nTranscript: ${transcript}`
           }
         ],
-        response_format: { type: "json_object" }
+        temperature: 0.7
       });
       
       const responseContent = completion.choices[0].message.content;
-      return JSON.parse(responseContent);
+      try {
+        return JSON.parse(responseContent);
+      } catch (jsonError) {
+        this.log(`Error parsing JSON response: ${jsonError.message}. Response was: ${responseContent}`);
+        // Create a fallback response if parsing fails
+        return {
+          recipe: {
+            name: "Recipe from transcript",
+            description: "Extracted from video transcript"
+          },
+          ingredients: []
+        };
+      }
     } catch (error) {
       this.log(`Error generating meal prep info: ${error.message}`);
       throw error;
