@@ -1,0 +1,11 @@
+{
+  "status": "completed",
+  "message": "Recipe processing completed successfully",
+  "result": {
+    "mealPrepInfo": {
+      "groceryList": "1. 500g lean lamb, trimmed\n2. 1 tablespoon olive oil\n3. 2 large onions, finely chopped\n4. 3 cloves garlic, minced\n5. 1 tablespoon fresh ginger, grated\n6. 1 teaspoon turmeric\n7. 2 teaspoons cumin\n8. 1 teaspoon paprika\n9. 1 teaspoon cinnamon\n10. 400g can of diced tomatoes\n11. 500ml low-sodium chicken stock\n12. 2 tablespoons fresh coriander, finely chopped\n13. 2 tablespoons fresh parsley, finely chopped\n14. Salt and pepper to taste\n15. Juice of 1 fresh lemon",
+      "cookingMethod": "1. Trim excess fat off lamb and season generously with salt and pepper.\n2. Preheat a pan over medium-high heat, add a spritz of oil.\n3. Add lamb to the pan and sear on all sides until browned, about 4 minutes per side.\n4. Remove seared lamb from pan and set aside.\n5. Lower heat to medium, add a spritz more of oil to the pan.\n6. Dice onions finely and add to the pan, sauté until browned.\n7. Add curry paste to the pan, stir well to mix with onions and let cook for 2 minutes.\n8. Return seared lamb to the pan, stir well to coat in curry mixture.\n9. Add enough water to just cover the lamb, bring to a boil.\n10. Once boiling, reduce heat to low, cover pan and let it simmer for 1 hour.\n11. After 1 hour, check lamb for tenderness. If needed, cook for additional 15 minutes.\n12. Divide cooked curry into 5 portions. Serve hot with rice or naan."
+    },
+    "timestamp": "2025-04-23T05:21:29.028Z"
+  }
+}

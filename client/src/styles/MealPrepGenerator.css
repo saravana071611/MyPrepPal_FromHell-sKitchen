@@ -73,6 +73,18 @@
   margin: 10px 0;
 }
 
+.section-content ol {
+  padding-left: 25px;
+  margin: 0;
+}
+
+.section-content li {
+  margin-bottom: 12px;
+  font-size: 16px;
+  display: list-item;
+  line-height: 1.5;
+}
+
 /* Special formatting for grocery list items */
 #grocery-list .section-content ul {
   padding-left: 20px;
@@ -91,15 +103,29 @@
   font-weight: 600;
 }
 
+#grocery-list .section-content ol {
+  padding-left: 20px;
+  margin: 0;
+  list-style-type: decimal;
+}
+
+#grocery-list .section-content li {
+  margin-bottom: 8px;
+  font-size: 16px;
+  display: list-item;
+}
+
 /* Special formatting for cooking steps */
 #cooking-method .section-content ol {
   padding-left: 25px;
   margin: 0;
+  list-style-type: decimal;
 }
 
 #cooking-method .section-content li {
   margin-bottom: 14px;
   font-size: 16px;
+  display: list-item;
 }
 
 #cooking-method .section-content h4 {
@@ -202,4 +228,4 @@
     page-break-inside: avoid;
     margin-bottom: 15px;
   }
-} 
+}

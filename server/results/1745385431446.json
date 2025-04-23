@@ -1,0 +1,11 @@
+{
+  "status": "completed",
+  "message": "Recipe processing completed successfully",
+  "result": {
+    "mealPrepInfo": {
+      "groceryList": "1. 1.5 lbs of fresh chicken breast\n2. 4 tablespoons of top-quality olive oil\n3. 3 cloves of fresh garlic, minced\n4. 1 cup of organic, low-sodium chicken broth\n5. 1 cup of skimmed milk\n6. 1 cup of freshly grated Parmesan cheese\n7. 3 tablespoons of unsalted butter\n8. 1 white onion, finely chopped\n9. 1 teaspoon of freshly ground black pepper\n10. 1 teaspoon of sea salt\n11. 1 tablespoon of fresh thyme leaves\n12. 2 tablespoons of all-purpose flour\n13. 1 cup of sliced fresh mushrooms\n14. 1 pound of high-quality puff pastry\n15. 1 free-range egg, beaten.",
+      "cookingMethod": "1. Preheat oven to 375°F.\n2. Dice 2 large onions, 3 carrots, and 4 celery stalks.\n3. Heat 2 tablespoons olive oil in a large pot over medium heat.\n4. Add diced vegetables to pot and sauté until softened, about 10 minutes.\n5. Add 4 minced cloves of garlic and sauté for another minute.\n6. Cut 2 lbs chicken into bite-sized pieces, season with salt and pepper.\n7. Push vegetables to one side of the pot, add chicken pieces to the other side.\n8. Brown chicken pieces, stirring occasionally, for about 5 minutes.\n9. Sprinkle 1/4 cup flour over chicken and vegetables, stir to coat.\n10. Gradually stir in 4 cups of low-sodium chicken broth.\n11. Bring mixture to a simmer, stirring constantly.\n12. Roll out pie crust and cut into 5 equal pieces.\n13. Spoon chicken mixture into 5 individual pie dishes.\n14. Cover each dish with a piece of pie crust, crimping edges to seal.\n15. Cut a few small slits in the top of each pie crust to allow steam to escape.\n16. Place pies on a baking sheet and bake in preheated oven for 30 minutes, or until crust is golden brown.\n17. Let pies cool for 10 minutes before serving."
+    },
+    "timestamp": "2025-04-23T05:18:28.763Z"
+  }
+}

@@ -52,86 +52,70 @@ const MealPrepGenerator = ({ mealPrepData }) => {
   const formatGroceryList = (content) => {
     if (!content) return '';
     
-    // Replace headers with formatted h4 elements
-    let formatted = content
-      .replace(/^([A-Z][A-Za-z\s]+):$/gm, '<h4>$1:</h4>')
-      .replace(/^([A-Z][A-Za-z\s]+)\s*$/gm, '<h4>$1</h4>');
-
-    // Convert plain dash/bullet lists to proper HTML lists
-    const lines = formatted.split('\n');
-    let result = ['<ol>'];
+    // Remove any HTML tags that might be in the content already
+    let cleanedContent = content.replace(/<\/?[^>]+(>|$)/g, "");
     
+    // Split content into lines
+    const lines = cleanedContent.split('\n');
+    let groceryItems = [];
+    
+    // Extract grocery list items (numbered items)
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
       
-      // Check if line is a numbered item (e.g. "1. 2 chicken breasts")
+      // Check if line is a numbered item (starts with a number followed by period)
       if (line.match(/^\d+\.\s+.+/)) {
         // Extract just the item text without the number
-        const itemContent = line.replace(/^\d+\.\s+/, '');
-        result.push(`<li>${itemContent}</li>`);
-      } 
-      // Check if this line is a bullet list item
-      else if (line.match(/^[-•*]\s+(.+)$/)) {
-        // Extract just the item text without the bullet
-        const itemContent = line.replace(/^[-•*]\s+(.+)$/, '$1');
-        result.push(`<li>${itemContent}</li>`);
-      } 
-      // Check if line is a header or category
-      else if (line.match(/<h4>/)) {
-        // Close the current list before adding the header
-        result.push('</ol>');
-        // Add the header
-        result.push(line);
-        // Start a new list
-        result.push('<ol>');
-      }
-      // Regular text
-      else if (line) {
-        // For non-list text, add as a paragraph outside the list
-        result.push(`</ol><p>${line}</p><ol>`);
+        const itemText = line.replace(/^\d+\.\s+/, '');
+        groceryItems.push(itemText);
       }
     }
     
-    // Close the final list
-    result.push('</ol>');
-    return result.join('\n');
+    // If we found grocery items, create a proper ordered list
+    if (groceryItems.length > 0) {
+      // Create HTML for ordered list
+      return '<ol>\n' + 
+        groceryItems.map(item => `  <li>${item}</li>`).join('\n') +
+        '\n</ol>';
+    }
+    
+    // Fallback to original content if no numbered items found
+    return '<p>' + cleanedContent.replace(/\n/g, '</p><p>') + '</p>';
   };
   
   // Function to format cooking instructions as ordered list
   const formatCookingInstructions = (content) => {
     if (!content) return '';
     
-    // Extract any ingredients section and move it to grocery list
-    const ingredientsMatch = content.match(/ingredients:([^]*?)(?=\n\s*\n|\n\s*step|\n\s*[0-9]+\.|\n\s*cooking|$)/i);
+    // Remove any HTML tags that might be in the content already
+    let cleanedContent = content.replace(/<\/?[^>]+(>|$)/g, "");
     
-    // Remove ingredients section from instructions if found
-    let cleanedContent = content;
-    if (ingredientsMatch && ingredientsMatch[1]) {
-      cleanedContent = content.replace(ingredientsMatch[0], '');
-    }
-
-    // Split content into lines and process
+    // Split content into lines
     const lines = cleanedContent.split('\n');
-    let result = ['<ol>'];
+    let instructionItems = [];
     
+    // Extract actual instruction steps (numbered items)
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
       
-      // Check if this line is a numbered step (matches "1. Some instruction")
+      // Check if line is a numbered instruction (starts with a number followed by period)
       if (line.match(/^\d+\.\s+.+/)) {
-        // Extract the instruction text without the number
+        // Extract just the instruction text without the number
         const instructionText = line.replace(/^\d+\.\s+/, '');
-        // Add as a list item
-        result.push(`<li>${instructionText}</li>`);
-      } else if (line) {
-        // For non-empty, non-numbered lines, add as a paragraph
-        // This handles section headers or other notes in the instructions
-        result.push(`</ol><p>${line}</p><ol>`);
+        instructionItems.push(instructionText);
       }
     }
     
-    result.push('</ol>');
-    return result.join('\n');
+    // If we found instruction items, create a proper ordered list
+    if (instructionItems.length > 0) {
+      // Create HTML for ordered list
+      return '<ol>\n' + 
+        instructionItems.map(item => `  <li>${item}</li>`).join('\n') +
+        '\n</ol>';
+    }
+    
+    // Fallback to original content if no numbered items found
+    return '<p>' + cleanedContent.replace(/\n/g, '</p><p>') + '</p>';
   };
 
   return (
