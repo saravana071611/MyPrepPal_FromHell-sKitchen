@@ -5,7 +5,7 @@ import '../styles/LandingPage.css';
 const LandingPage = ({ apiStatus, refreshApiStatus }) => {
   const [gameActive, setGameActive] = useState(false);
   const [score, setScore] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(30);
+  const [timeLeft, setTimeLeft] = useState(10);
   const [foods, setFoods] = useState([]);
   const [showQuote, setShowQuote] = useState(false);
   const [currentQuote, setCurrentQuote] = useState('');
@@ -70,7 +70,7 @@ const LandingPage = ({ apiStatus, refreshApiStatus }) => {
     setGameActive(true);
     setGamePaused(false);
     setScore(0);
-    setTimeLeft(30);
+    setTimeLeft(10);
     setFoods([]);
     setDifficulty(1);
     
@@ -83,7 +83,7 @@ const LandingPage = ({ apiStatus, refreshApiStatus }) => {
     // Set up difficulty progression - increase difficulty faster
     difficultyTimerRef.current = setInterval(() => {
       setDifficulty(prev => Math.min(prev + 1, 5));
-    }, 6000); // Increase difficulty every 6 seconds (changed from 12 seconds)
+    }, 4000); // Increase difficulty every 4 seconds (changed from 6 seconds)
   };
 
   // Start timer function
@@ -106,7 +106,7 @@ const LandingPage = ({ apiStatus, refreshApiStatus }) => {
   const startFoodSpawning = () => {
     clearInterval(gameIntervalRef.current);
     // Spawn interval decreases as difficulty increases - made faster overall
-    const spawnInterval = Math.max(600 - (difficulty * 100), 200);
+    const spawnInterval = Math.max(400 - (difficulty * 70), 150);
     gameIntervalRef.current = setInterval(spawnFood, spawnInterval);
   };
 
