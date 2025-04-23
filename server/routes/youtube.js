@@ -793,7 +793,7 @@ router.post('/extract-and-transcribe', async (req, res) => {
         const videoId = extractVideoId(videoUrl);
         videoInfo = await retryOperationWithTimeout(async () => {
           return await fetchVideoInfoFallback(videoId);
-        }, 2, 1000); // 2 retries with 1 second initial delay
+        }, 20000, 2, 1000); // 20 sec timeout, 2 retries, 1 second initial delay
         console.log('Successfully fetched video info using fallback method');
       } catch (fallbackError) {
         console.error('Fallback video info also failed:', fallbackError.message);
@@ -1138,7 +1138,7 @@ router.get('/video-info', async (req, res) => {
         console.log('Attempting to use fallback method...');
         info = await retryOperationWithTimeout(async () => {
           return await fetchVideoInfoFallback(videoId);
-        }, 2, 1000); // 2 retries with 1 second initial delay
+        }, 20000, 2, 1000); // 20 sec timeout, 2 retries, 1 second initial delay
         console.log('Successfully fetched video info using fallback method');
       } catch (fallbackError) {
         console.error('Fallback method error:', fallbackError.message);
