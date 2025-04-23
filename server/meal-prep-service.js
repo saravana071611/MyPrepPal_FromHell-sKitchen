@@ -40,25 +40,22 @@ class MealPrepService {
     
     try {
       // Start the processing with the controller
-      const result = await this.mealPrepController.processRecipeVideo(videoUrl, {
-        statusCallback: (status) => {
-          this.log(`[${processingId}] Status: ${status.status} - ${status.message || ''}`);
-          statusCallback(status);
-        }
-      });
+      const result = await this.mealPrepController.processRecipeVideo(videoUrl, processingId);
       
       // Save the result for later retrieval
       this.saveProcessingResult(processingId, {
-        status: result.success ? 'completed' : 'failed',
-        message: result.success ? 'Recipe processing completed successfully' : result.error,
+        status: 'completed',
+        message: 'Recipe processing completed successfully',
         result: {
-          mealPrepInfo: result.mealPrepInfo,
-          outputFilePath: result.outputFilePath,
+          mealPrepInfo: result,
           timestamp: new Date().toISOString()
         }
       });
       
-      return result;
+      return {
+        success: true,
+        mealPrepInfo: result
+      };
     } catch (error) {
       this.log(`Error processing recipe: ${error.message}`, true);
       
@@ -70,7 +67,10 @@ class MealPrepService {
         timestamp: new Date().toISOString()
       });
       
-      throw error;
+      return {
+        success: false,
+        error: error.message
+      };
     }
   }
   
@@ -158,17 +158,8 @@ class MealPrepService {
     this.log('Generating meal prep from transcription text');
     
     try {
-      // Generate Gordon's review
+      // Generate Gordon's review (still needed to generate other content)
       const gordonReview = await this.mealPrepController.getGordonReview(transcriptionText);
-      
-      // Generate detailed feedback
-      const recipeFeedback = await this.mealPrepController.getRecipeFeedback(
-        transcriptionText, 
-        gordonReview
-      );
-      
-      // Get nutrition and macro goals
-      const macroAnalysis = await this.mealPrepController.getMacroAnalysis(gordonReview);
       
       // Get a structured grocery list
       const structuredGroceryList = await this.mealPrepController.getStructuredGroceryList(gordonReview);
@@ -176,17 +167,10 @@ class MealPrepService {
       // Get detailed cooking method
       const detailedCookingMethod = await this.mealPrepController.getDetailedCookingMethod(gordonReview);
       
-      // Get storage instructions
-      const storageInstructions = await this.mealPrepController.getStorageInstructions(gordonReview);
-      
-      // Combine all information
+      // Combine only grocery list and cooking method
       const mealPrepInfo = {
-        raw: gordonReview,
-        feedback: recipeFeedback,
         groceryList: structuredGroceryList,
-        instructions: detailedCookingMethod,
-        macros: macroAnalysis,
-        storage: storageInstructions
+        cookingMethod: detailedCookingMethod
       };
       
       return {
@@ -203,20 +187,16 @@ class MealPrepService {
   }
   
   /**
-   * Save processing result to a file
-   * @private
+   * Save processing result to file
+   * @param {string} processingId - The ID of the processing job
+   * @param {Object} data - The data to save
    */
   saveProcessingResult(processingId, data) {
+    this.log(`Saved processing result for ${processingId}`);
+    
     try {
-      const resultPath = path.join(this.resultsDir, `${processingId}.json`);
-      fs.writeFileSync(
-        resultPath,
-        JSON.stringify({
-          id: processingId,
-          ...data
-        }, null, 2)
-      );
-      this.log(`Saved processing result for ${processingId}`);
+      const filePath = path.join(this.resultsDir, `${processingId}.json`);
+      fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf8');
     } catch (error) {
       this.log(`Error saving processing result: ${error.message}`, true);
     }
@@ -224,7 +204,8 @@ class MealPrepService {
   
   /**
    * Logging helper
-   * @private
+   * @param {string} message - The message to log
+   * @param {boolean} isError - Whether this is an error message
    */
   log(message, isError = false) {
     if (this.debug) {

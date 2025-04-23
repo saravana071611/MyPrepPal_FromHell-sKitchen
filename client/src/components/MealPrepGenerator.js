@@ -18,7 +18,7 @@ const MealPrepGenerator = ({ mealPrepData }) => {
     // Special handling for different sections
     if (id === 'grocery-list') {
       formattedContent = formatGroceryList(content);
-    } else if (id === 'instructions') {
+    } else if (id === 'cooking-method') {
       formattedContent = formatCookingInstructions(content);
     } else {
       // For other sections, just format paragraphs
@@ -26,7 +26,7 @@ const MealPrepGenerator = ({ mealPrepData }) => {
     }
     
     return (
-      <div className="meal-prep-section" id={id}>
+      <div className="meal-prep-section wide-section" id={id}>
         <h3>{title}</h3>
         <div 
           className="section-content"
@@ -168,19 +168,8 @@ const MealPrepGenerator = ({ mealPrepData }) => {
       </div>
       
       <div className="meal-prep-content">
-        {renderSection("Recipe Feedback", mealPrepData.feedback, "feedback")}
-        
-        <div className="meal-prep-two-column">
-          <div className="meal-prep-column">
-            {renderSection("Grocery List (5 Portions)", mealPrepData.groceryList, "grocery-list")}
-            {renderSection("Macronutrient Information", mealPrepData.macros, "macros")}
-          </div>
-          
-          <div className="meal-prep-column">
-            {renderSection("Cooking Instructions", mealPrepData.instructions, "instructions")}
-            {renderSection("Storage & Reheating", mealPrepData.storage, "storage")}
-          </div>
-        </div>
+        {renderSection("Grocery List (5 Portions)", mealPrepData.groceryList, "grocery-list")}
+        {renderSection("Cooking Method", mealPrepData.cookingMethod, "cooking-method")}
         
         <div className="meal-prep-actions">
           <button className="print-button" onClick={() => window.print()}>

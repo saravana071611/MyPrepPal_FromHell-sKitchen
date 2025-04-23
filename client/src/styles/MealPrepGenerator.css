@@ -7,6 +7,9 @@
   margin: 20px 0;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
   color: #f0f0f0;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .meal-prep-header {
@@ -39,9 +42,15 @@
 .meal-prep-section {
   background-color: #2a2e32;
   border-radius: 6px;
-  padding: 15px;
+  padding: 20px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
   border-left: 3px solid #ff6b4a;
+  width: 100%;
+}
+
+/* Make sections wider */
+.wide-section {
+  max-width: 100%;
 }
 
 .meal-prep-section h3 {
@@ -49,19 +58,19 @@
   border-bottom: 1px solid #444;
   padding-bottom: 10px;
   margin-top: 0;
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 600;
   text-transform: uppercase;
 }
 
 .section-content {
-  padding: 5px;
-  font-size: 15px;
-  line-height: 1.6;
+  padding: 10px;
+  font-size: 16px;
+  line-height: 1.7;
 }
 
 .section-content p {
-  margin: 8px 0;
+  margin: 10px 0;
 }
 
 /* Special formatting for grocery list items */
@@ -71,24 +80,33 @@
 }
 
 #grocery-list .section-content li {
-  margin-bottom: 6px;
+  margin-bottom: 8px;
+  font-size: 16px;
 }
 
 #grocery-list .section-content h4 {
-  margin: 15px 0 8px 0;
+  margin: 20px 0 10px 0;
   color: #ff6b4a;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 600;
 }
 
 /* Special formatting for cooking steps */
-#instructions .section-content ol {
+#cooking-method .section-content ol {
   padding-left: 25px;
   margin: 0;
 }
 
-#instructions .section-content li {
-  margin-bottom: 12px;
+#cooking-method .section-content li {
+  margin-bottom: 14px;
+  font-size: 16px;
+}
+
+#cooking-method .section-content h4 {
+  margin: 20px 0 10px 0;
+  color: #ff6b4a;
+  font-size: 18px;
+  font-weight: 600;
 }
 
 .meal-prep-two-column {
@@ -115,11 +133,11 @@
   display: flex;
   justify-content: center;
   gap: 15px;
-  margin-top: 20px;
+  margin-top: 30px;
 }
 
 .meal-prep-actions button {
-  padding: 10px 20px;
+  padding: 12px 24px;
   border: none;
   border-radius: 4px;
   cursor: pointer;
@@ -127,6 +145,7 @@
   transition: background-color 0.2s;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  font-size: 14px;
 }
 
 .print-button {

@@ -49,20 +49,12 @@ class MealPrepController {
   
   /**
    * Process the recipe video
-   * @param {*} url The YouTube URL
-   * @param {*} id The ID to save the result
-   * @returns A promise that resolves to the meal prep info
+   * @param {string} url The YouTube URL
+   * @param {string} id The ID to save the result
+   * @returns {Promise<Object>} A promise that resolves to the meal prep info
    */
   async processRecipeVideo(url, id) {
     this.log(`Processing recipe from ${url}`);
-    
-    // Save initial status
-    const initialStatusData = {
-      id,
-      status: 'processing',
-      timestamp: Date.now()
-    };
-    await this.saveMealPrepData(id, initialStatusData);
     
     try {
       // 1. Get the transcript
@@ -72,44 +64,22 @@ class MealPrepController {
         throw new Error('Failed to get transcript from YouTube video');
       }
       
-      // 2. Generate meal prep info from transcript
-      const mealPrepInfo = await this.generateMealPrepInfo(transcript);
+      // 2. Generate Gordon's review (needed to generate other content)
+      const gordonReview = await this.getGordonReview(transcript);
       
-      // 3. Generate Gordon Ramsay's review of the recipe
-      const gordonReview = await this.getGordonRamsayReview(mealPrepInfo);
+      // 3. Get a structured grocery list
+      const structuredGroceryList = await this.getStructuredGroceryList(gordonReview);
       
-      // 4. Get cooking and meal prep instructions with Gordon Ramsay's voice
-      const gordonInstructions = await this.getGordonRamsayInstructions(mealPrepInfo);
+      // 4. Get detailed cooking method
+      const detailedCookingMethod = await this.getDetailedCookingMethod(gordonReview);
       
-      // 5. Assemble the final meal prep data
-      const mealPrepData = {
-        id,
-        status: 'completed',
-        url,
-        timestamp: Date.now(),
-        recipe: mealPrepInfo.recipe,
-        ingredients: mealPrepInfo.ingredients,
-        cookingInstructions: gordonInstructions.cookingInstructions,
-        mealPrepInstructions: gordonInstructions.mealPrepInstructions,
-        gordonReview
+      // 5. Return only grocery list and cooking method
+      return {
+        groceryList: structuredGroceryList,
+        cookingMethod: detailedCookingMethod
       };
-      
-      // 6. Save the meal prep data
-      await this.saveMealPrepData(id, mealPrepData);
-      
-      return mealPrepData;
     } catch (error) {
-      this.log(`Error processing recipe: ${error.message}`);
-      
-      // Save error status
-      const errorData = {
-        id,
-        status: 'error',
-        error: error.message,
-        timestamp: Date.now()
-      };
-      await this.saveMealPrepData(id, errorData);
-      
+      this.log(`Error processing recipe: ${error.message}`, true);
       throw error;
     }
   }
@@ -200,37 +170,27 @@ class MealPrepController {
   async getStructuredGroceryList(gordonReview) {
     this.log('Generating structured grocery list');
 
-    // First try to extract grocery list from the Gordon Review
-    const groceryListRegex = /(?:grocery\s*list|shopping\s*list)[^:]*:([^]*?)(?=\n\s*\n\s*instructions|\n\s*\n\s*cooking|\n\s*\n\s*storage|$)/i;
-    const match = gordonReview.match(groceryListRegex);
-    
-    // If grocery list is found in the review, use it as a base for the structured list
-    let baseGroceryList = '';
-    if (match && match[1] && match[1].trim().length > 0) {
-      baseGroceryList = match[1].trim();
-      this.log('Found grocery list in Gordon\'s review using regex');
-    } else {
-      this.log('No grocery list found in Gordon\'s review using regex');
-    }
-
+    // Extract base grocery information from transcription
     const prompt = `
-    As Gordon Ramsay, create a perfectly organized shopping list for this meal prep recipe.
+    As Gordon Ramsay, create a numbered grocery list for this recipe.
     
     Requirements:
-    1. Use your trademark authority and attention to precision 
-    2. Organize ingredients by department/section (produce, meats, dairy, etc.)
+    1. Format as a NUMBERED LIST (e.g., "1. 2 large free-range eggs")
+    2. Make sure each ingredient is on its own numbered line
     3. Specify EXACT quantities with your characteristic insistence on precision
-    4. Add quality indicators that you would demand (e.g., "fresh", "organic", "free-range")
-    5. Include chef's notes on selecting the absolute best ingredients
-    6. Highlight any specialty items with alternatives if needed
-    7. Format the list clearly for easy shopping
+    4. Include quality indicators where appropriate (e.g., "fresh", "organic", "free-range")
+    5. Keep it simple and straightforward - just the ingredients list
+    6. Make sure there are AT LEAST 5 ingredients and NO MORE THAN 15 ingredients
     
-    Make this shopping list sound authentically like it was written by Gordon Ramsay - meticulous, authoritative, and with your passion for quality ingredients!
+    IMPORTANT: The format MUST be a simple numbered list, with each number on a new line.
+    
+    Example format:
+    1. 2 free-range chicken breasts
+    2. 1 tablespoon olive oil
+    3. 2 cloves garlic, minced
     
     Recipe:
     ${gordonReview}
-    
-    ${baseGroceryList ? 'Original Grocery List: ' + baseGroceryList : ''}
     `;
 
     this.log('Calling OpenAI to generate structured grocery list');
@@ -239,75 +199,24 @@ class MealPrepController {
       messages: [
         {
           role: "system",
-          content: "You are Gordon Ramsay, the world-famous chef known for your exacting standards and insistence on quality ingredients. You create shopping lists with authority, precision, and your trademark personality. Your lists are perfectly organized and contain your expert advice on selecting the finest ingredients."
+          content: "You are Gordon Ramsay creating a simple numbered grocery list. Your list must be precisely formatted with each ingredient on its own numbered line. Include exact quantities and quality indicators. Start each line with a number followed by a period. Do not include explanations, headers, or any other text - just the numbered list of ingredients."
         },
         { role: "user", content: prompt }
       ],
       temperature: 0.7,
-      max_tokens: 850
+      max_tokens: 500
     });
 
     const generatedGroceryList = response.choices[0].message.content;
     
-    // If OpenAI returns a placeholder or error message, fallback to extracting from the instructions
-    if (generatedGroceryList.includes("haven't provided") || generatedGroceryList.includes("no grocery list")) {
-      this.log('OpenAI returned a placeholder message, falling back to alternative extraction methods');
-      
-      // Try to extract grocery list from the instructions field if it exists
-      const instructionsMatch = gordonReview.match(/instructions[^:]*:([^]*?)(?=\n\s*\n\s*storage|\n\s*\n\s*meal\s*prep|$)/i);
-      
-      if (instructionsMatch && instructionsMatch[1]) {
-        const instructions = instructionsMatch[1].trim();
-        this.log('Found instructions section, checking for ingredients');
-        
-        // Look for ingredients section within instructions
-        const ingredientsMatch = instructions.match(/ingredients[^:]*:([^]*?)(?=\n\s*\n|\n\s*step|\n\s*[0-9]+\.|$)/i);
-        
-        if (ingredientsMatch && ingredientsMatch[1]) {
-          this.log('Found ingredients section within instructions');
-          return ingredientsMatch[1].trim();
-        } else {
-          this.log('No ingredients section found within instructions');
-        }
-      } else {
-        this.log('No instructions section found in Gordon\'s review');
-      }
-      
-      // If we can't find a proper grocery list, extract ingredients from the raw recipe text
-      this.log('Attempting to extract ingredients using regex patterns');
-      const ingredientsRegex = /\b(?:[\d]+(?:\.|\/|,|\s|-)(?:\s*\d+\/\d+|\s*\d+)?\s*(?:cup|tbsp|tablespoon|tsp|teaspoon|oz|ounce|pound|lb|gram|kg|slice|clove|bunch|handful|piece|can|package|bottle)\s+[a-zA-Z\s]+|\d+\s+[a-zA-Z]+(?:\s+[a-zA-Z]+)*)\b/gi;
-      const ingredientsMatches = gordonReview.match(ingredientsRegex);
-      
-      if (ingredientsMatches && ingredientsMatches.length > 0) {
-        this.log(`Found ${ingredientsMatches.length} ingredients using regex pattern`);
-        return "GROCERY LIST:\n\n" + ingredientsMatches.join("\n");
-      } else {
-        this.log('No ingredients found using regex pattern');
-      }
-      
-      // Last resort - extract the numbered list that might be ingredients
-      this.log('Attempting to extract ingredients from numbered list');
-      const numberedListRegex = /\d+\.\s*\*\*([^*]+)\*\*:/g;
-      let numberedMatch;
-      let ingredients = [];
-      
-      while ((numberedMatch = numberedListRegex.exec(gordonReview)) !== null) {
-        ingredients.push(numberedMatch[1].trim());
-      }
-      
-      if (ingredients.length > 0) {
-        this.log(`Found ${ingredients.length} ingredients in numbered list`);
-        return "GROCERY LIST:\n\n" + ingredients.join("\n");
-      } else {
-        this.log('No ingredients found in numbered list');
-      }
-      
-      this.log('All extraction methods failed, returning fallback message');
-      return "GROCERY LIST:\n\nCouldn't extract the grocery list from the recipe. Please check the raw recipe text for ingredients.";
-    }
+    // Clean up the list to ensure it's properly formatted
+    const cleanedList = generatedGroceryList
+      .replace(/^#+\s*Grocery List\s*#+$/mi, '') // Remove any header
+      .replace(/^Ingredients:$/mi, '') // Remove "Ingredients:" header
+      .trim();
     
     this.log('Successfully generated structured grocery list');
-    return generatedGroceryList;
+    return cleanedList;
   }
   
   /**
@@ -316,59 +225,26 @@ class MealPrepController {
   async getDetailedCookingMethod(gordonReview) {
     this.log('Generating detailed cooking method');
     
-    // First try our regex extraction
-    const extractedInstructions = this.extractCookingInstructions(gordonReview);
-    
-    if (extractedInstructions) {
-      // If we have instructions, process them with OpenAI for better structure
-      const prompt = `
-      You are Gordon Ramsay creating cooking instructions.
-      
-      Take these cooking instructions and enhance them with your signature Gordon Ramsay style:
-      1. Make each step crystal clear and detailed with your trademark precision
-      2. Add EXACT cooking times and temperatures - you're a stickler for precision!
-      3. Include your special chef techniques and passionate tips that made you famous 
-      4. Optimize for meal prepping 5 portions with your characteristic efficiency
-      5. Format the steps clearly, but maintain your energetic, passionate voice
-      6. Insert your trademark expressions and mild profanity where appropriate
-      
-      Make these instructions SCREAM Gordon Ramsay - passionate, precise, and inspiring!
-      
-      Original Instructions:
-      ${extractedInstructions}
-      `;
-      
-      const response = await this.openai.chat.completions.create({
-        model: "gpt-4",
-        messages: [
-          { 
-            role: "system", 
-            content: "You are Gordon Ramsay, the world-famous chef known for passionate, direct cooking instruction. Your cooking instructions are precise, energetic, and distinctively Gordon. Maintain Gordon's authentic voice throughout - demanding excellence, emphasizing crucial techniques, and occasionally using his trademark expressions and mild profanity. Never sound like a generic cooking instructor."
-          },
-          { role: "user", content: prompt }
-        ],
-        temperature: 0.7,
-        max_tokens: 1000
-      });
-      
-      return response.choices[0].message.content;
-    }
-    
-    // If extraction failed, analyze the whole review to create instructions
+    // Create a prompt for numbered cooking steps
     const prompt = `
     You are Gordon Ramsay creating cooking instructions.
     
-    Based on your recipe review below, create detailed cooking instructions for 5 meal prep portions:
-    1. Make each step crystal clear and detailed with your trademark precision
-    2. Add EXACT cooking times and temperatures - you're a stickler for precision!
-    3. Include your special chef techniques and passionate tips that made you famous 
-    4. Optimize for meal prepping 5 portions with your characteristic efficiency
-    5. Format the steps clearly, but maintain your energetic, passionate voice
-    6. Insert your trademark expressions and mild profanity where appropriate
+    Create a NUMBERED LIST of cooking steps for meal prep:
+    1. Format as a clear numbered list with each step on its own line
+    2. Start with step 1 and continue sequentially
+    3. Make each step clear, direct and actionable
+    4. Include exact cooking times and temperatures
+    5. Include your chef's tips where critically important
+    6. Optimize for meal prepping 5 portions
     
-    Make these instructions SCREAM Gordon Ramsay - passionate, precise, and inspiring!
+    IMPORTANT: The format MUST be a simple numbered list with each number starting on a new line.
     
-    Your Review:
+    Example format:
+    1. Preheat oven to 425°F. Season chicken with salt and pepper.
+    2. Heat oil in a pan over medium-high heat. Sear chicken 4 minutes per side.
+    3. Transfer to oven and bake for 15 minutes until internal temperature reaches 165°F.
+    
+    Recipe:
     ${gordonReview}
     `;
     
@@ -377,15 +253,22 @@ class MealPrepController {
       messages: [
         { 
           role: "system", 
-          content: "You are Gordon Ramsay, the world-famous chef known for passionate, direct cooking instruction. Your cooking instructions are precise, energetic, and distinctively Gordon. Maintain Gordon's authentic voice throughout - demanding excellence, emphasizing crucial techniques, and occasionally using his trademark expressions and mild profanity. Never sound like a generic cooking instructor."
+          content: "You are Gordon Ramsay creating a numbered list of cooking steps. Your instructions must be formatted as a simple numbered list, with each step starting with a number followed by a period. Each step should be clear, direct and precise. Do not include explanations, headers, or any other text - just the numbered steps."
         },
         { role: "user", content: prompt }
       ],
       temperature: 0.7,
-      max_tokens: 1000
+      max_tokens: 800
     });
     
-    return response.choices[0].message.content;
+    // Clean up the response to ensure it's properly formatted
+    const cookingMethod = response.choices[0].message.content
+      .replace(/^#+\s*Cooking Instructions\s*#+$/mi, '') // Remove any header
+      .replace(/^Instructions:$/mi, '') // Remove "Instructions:" header
+      .replace(/^Cooking Method:$/mi, '') // Remove "Cooking Method:" header
+      .trim();
+    
+    return cookingMethod;
   }
   
   /**
@@ -394,27 +277,21 @@ class MealPrepController {
   async getGordonReview(transcriptionText) {
     this.log(`Getting Gordon Ramsay's review`);
     
-    // Prepare the prompt for Gordon Ramsay's review
+    // Prepare the prompt for Gordon Ramsay's review - concise 3-line feedback
     const prompt = `
     You are Gordon Ramsay, the famous chef known for your passionate, direct and colorful cooking style.
     
     I'm going to give you a transcription of a cooking video recipe. I need you to:
     
-    1. Review the recipe and improve it with your culinary expertise - be BOLD and DIRECT in your critique
-    2. Make it healthier without sacrificing flavor - get passionate about proper nutrition and flavor balance
-    3. Completely transform this recipe into something EXTRAORDINARY with your signature Gordon flair
-    4. Adapt it for meal prep (5 portions) - this is VERY important!
-    5. Create a precise grocery list with exact quantities needed - be specific and demanding about ingredients
-    6. Provide detailed meal prep cooking steps with your typical passionate commentary, colorful language, and chef's tricks
-    7. Explain how to store and reheat the 5 portions throughout the week with your signature intensity
-
+    1. Create a VERY CONCISE 3-line summary feedback of the recipe - be BOLD and DIRECT in your critique
+    2. Focus on how to make it healthier without sacrificing flavor
+    3. Keep it short, punchy, and in your authentic Gordon Ramsay voice
+    
     Your response style MUST:
-    - Include your signature expressions like "Come on!", "Stunning!", "Beautiful!", "It's RAW!", etc.
-    - Use your trademark energy and intensity in every section
+    - Include your signature expressions like "Come on!", "Stunning!", "Beautiful!"
     - Be direct, passionate, and occasionally use mild profanity like you do on TV
     - Show your characteristic impatience with mediocrity and excitement for excellent technique
-    - Emphasize flavor, texture, and presentation with your typical enthusiasm
-    - Include sharp, witty observations and chef's secrets that only Gordon would know
+    - STICK TO ONLY 3 LINES - this is absolutely critical
     
     Here's the transcription:
     
@@ -427,12 +304,12 @@ class MealPrepController {
       messages: [
         { 
           role: "system", 
-          content: "You are Gordon Ramsay, the passionate, direct, and occasionally profane celebrity chef. Your responses must capture Gordon's distinctive personality - energetic, impatient with mediocrity, obsessed with flavor and technique, and peppered with signature catchphrases. You are reviewing and improving a recipe transcript, making it healthier while maintaining flavor, adapting it for meal prep (5 portions), and providing a detailed grocery list with cooking instructions. Use Gordon's authentic voice, colorful language, and convey his genuine passion for cooking excellence. Never break character or sound like a neutral cooking instructor."
+          content: "You are Gordon Ramsay providing a VERY CONCISE 3-line critique of a recipe. Your feedback must be punchy, direct, and capture Gordon's distinctive personality. Focus on making the recipe healthier without sacrificing flavor. Absolutely limit your response to 3 lines. Use Gordon's authentic voice with his signature expressions. Never break character or sound like a neutral cooking instructor."
         },
         { role: "user", content: prompt }
       ],
       temperature: 0.9,
-      max_tokens: 2500
+      max_tokens: 300
     });
     
     // Return Gordon's response
@@ -442,24 +319,66 @@ class MealPrepController {
   /**
    * Process Gordon's review to extract structured meal prep information
    */
-  processMealPrep(gordonReview) {
-    this.log('Processing meal prep information');
+  async processMealPrep(transcriptionText) {
+    this.log('Processing meal prep request');
+
+    try {
+      // Get Gordon Ramsay's review and instructions
+      const gordonReview = await this.getGordonReview(transcriptionText);
+      this.log('Gordon review obtained, length: ' + gordonReview.length);
+      
+      // Get structured grocery list
+      const groceryList = await this.getStructuredGroceryList(gordonReview);
+      this.log('Grocery list obtained, length: ' + groceryList.length);
+      
+      // Get detailed cooking method
+      const cookingMethod = await this.getDetailedCookingMethod(gordonReview);
+      this.log('Cooking method obtained, length: ' + cookingMethod.length);
+      
+      // Format the final output with clear section headings
+      const formattedOutput = `# FEEDBACK\n${gordonReview}\n\n# GROCERY LIST\n${groceryList}\n\n# COOKING METHOD\n${cookingMethod}`;
+      
+      // Clean up the final output
+      const cleanedOutput = this.cleanFormattedOutput(formattedOutput);
+      
+      this.log('Meal prep processed successfully');
+      return cleanedOutput;
+    } catch (error) {
+      this.logError('Error processing meal prep', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Clean up the formatted output to ensure consistent styling
+   */
+  cleanFormattedOutput(output) {
+    let cleanedOutput = output;
     
-    // Extract the grocery list
-    const groceryList = this.extractGroceryList(gordonReview);
+    // Remove any extra markdown headers that might have been added by the model
+    cleanedOutput = cleanedOutput.replace(/^#+\s*FEEDBACK\s*$/gim, '# FEEDBACK');
+    cleanedOutput = cleanedOutput.replace(/^#+\s*GROCERY\s*LIST\s*$/gim, '# GROCERY LIST');
+    cleanedOutput = cleanedOutput.replace(/^#+\s*COOKING\s*METHOD\s*$/gim, '# COOKING METHOD');
     
-    // Extract cooking instructions
-    const cookingInstructions = this.extractCookingInstructions(gordonReview);
+    // Remove any repeated newlines (more than 2)
+    cleanedOutput = cleanedOutput.replace(/\n{3,}/g, '\n\n');
     
-    // Extract storage information
-    const storageInfo = this.extractStorageInfo(gordonReview);
+    // Ensure consistent numbering in grocery list
+    cleanedOutput = cleanedOutput.replace(/(# GROCERY LIST\n+)([\s\S]*?)(\n+# COOKING METHOD)/i, (match, header, list, footer) => {
+      const formattedList = list
+        .split('\n')
+        .map(line => line.trim())
+        .filter(line => line.length > 0)
+        .map((line, index) => {
+          // Replace existing numbers or bullets with new numbers
+          return line.replace(/^(\d+\.|\*|\-)\s+/, `${index + 1}. `);
+        })
+        .join('\n');
+      
+      return `${header}${formattedList}${footer}`;
+    });
     
-    return {
-      raw: gordonReview,
-      groceryList,
-      instructions: cookingInstructions,
-      storage: storageInfo
-    };
+    return cleanedOutput;
   }
   
   /**
@@ -855,11 +774,13 @@ class MealPrepController {
     this.log(`Saving meal prep data for ID: ${id}`);
     
     try {
-      const filePath = path.join(this.resultsDir, `meal_prep_${id}.json`);
+      // Make sure id is a string
+      const idStr = String(id);
+      const filePath = path.join(this.resultsDir, `${idStr}.json`);
       await fs.promises.writeFile(filePath, JSON.stringify(data, null, 2));
       this.log(`Meal prep data saved to: ${filePath}`);
     } catch (error) {
-      this.log(`Error saving meal prep data: ${error.message}`);
+      this.log(`Error saving meal prep data: ${error.message}`, true);
       throw error;
     }
   }
