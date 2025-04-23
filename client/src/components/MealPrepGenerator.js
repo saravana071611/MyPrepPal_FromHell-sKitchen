@@ -59,44 +59,41 @@ const MealPrepGenerator = ({ mealPrepData }) => {
 
     // Convert plain dash/bullet lists to proper HTML lists
     const lines = formatted.split('\n');
-    let inList = false;
-    let result = [];
+    let result = ['<ol>'];
     
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
       
-      // Check if this line is a list item
-      if (line.match(/^[-•*]\s+(.+)$/)) {
-        // If we're not already in a list, start one
-        if (!inList) {
-          result.push('<ul>');
-          inList = true;
-        }
-        
-        // Add the list item
+      // Check if line is a numbered item (e.g. "1. 2 chicken breasts")
+      if (line.match(/^\d+\.\s+.+/)) {
+        // Extract just the item text without the number
+        const itemContent = line.replace(/^\d+\.\s+/, '');
+        result.push(`<li>${itemContent}</li>`);
+      } 
+      // Check if this line is a bullet list item
+      else if (line.match(/^[-•*]\s+(.+)$/)) {
+        // Extract just the item text without the bullet
         const itemContent = line.replace(/^[-•*]\s+(.+)$/, '$1');
         result.push(`<li>${itemContent}</li>`);
-      } else {
-        // If we're exiting a list
-        if (inList) {
-          result.push('</ul>');
-          inList = false;
-        }
-        
-        // Add the non-list line
-        if (line) {
-          result.push(`<p>${line}</p>`);
-        } else {
-          result.push(''); // empty line
-        }
+      } 
+      // Check if line is a header or category
+      else if (line.match(/<h4>/)) {
+        // Close the current list before adding the header
+        result.push('</ol>');
+        // Add the header
+        result.push(line);
+        // Start a new list
+        result.push('<ol>');
+      }
+      // Regular text
+      else if (line) {
+        // For non-list text, add as a paragraph outside the list
+        result.push(`</ol><p>${line}</p><ol>`);
       }
     }
     
-    // Close the list if we're still in one
-    if (inList) {
-      result.push('</ul>');
-    }
-    
+    // Close the final list
+    result.push('</ol>');
     return result.join('\n');
   };
   
@@ -113,50 +110,27 @@ const MealPrepGenerator = ({ mealPrepData }) => {
       cleanedContent = content.replace(ingredientsMatch[0], '');
     }
 
-    // Convert numeric steps to ordered list
+    // Split content into lines and process
     const lines = cleanedContent.split('\n');
-    let inList = false;
-    let result = [];
+    let result = ['<ol>'];
     
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
       
-      // Check if this line is a numeric step
-      if (line.match(/^[0-9]+\.\s+(.+)$/)) {
-        // If we're not already in a list, start one
-        if (!inList) {
-          result.push('<ol>');
-          inList = true;
-        }
-        
-        // Add the list item
-        const stepContent = line.replace(/^[0-9]+\.\s+(.+)$/, '$1');
-        result.push(`<li>${stepContent}</li>`);
-      } else {
-        // If we're exiting a list
-        if (inList && (line === '' || line.match(/^[A-Z].*:$/))) {
-          result.push('</ol>');
-          inList = false;
-        }
-        
-        // Add the non-list line
-        if (line) {
-          if (line.match(/^[A-Z].*:$/)) {
-            result.push(`<h4>${line}</h4>`);
-          } else {
-            result.push(`<p>${line}</p>`);
-          }
-        } else if (result.length > 0) {
-          result.push(''); // empty line only if there's already content
-        }
+      // Check if this line is a numbered step (matches "1. Some instruction")
+      if (line.match(/^\d+\.\s+.+/)) {
+        // Extract the instruction text without the number
+        const instructionText = line.replace(/^\d+\.\s+/, '');
+        // Add as a list item
+        result.push(`<li>${instructionText}</li>`);
+      } else if (line) {
+        // For non-empty, non-numbered lines, add as a paragraph
+        // This handles section headers or other notes in the instructions
+        result.push(`</ol><p>${line}</p><ol>`);
       }
     }
     
-    // Close the list if we're still in one
-    if (inList) {
-      result.push('</ol>');
-    }
-    
+    result.push('</ol>');
     return result.join('\n');
   };
 
@@ -198,4 +172,4 @@ const MealPrepGenerator = ({ mealPrepData }) => {
   );
 };
 
-export default MealPrepGenerator; 
+export default MealPrepGenerator;
