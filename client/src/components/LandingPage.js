@@ -16,6 +16,7 @@ const LandingPage = ({ apiStatus, refreshApiStatus }) => {
   const gameIntervalRef = useRef(null);
   const timerIntervalRef = useRef(null);
   const difficultyTimerRef = useRef(null);
+  const alarmSoundRef = useRef(null);
 
   // Gordon Ramsay's iconic scolding quotes
   const ramsayQuotes = [
@@ -183,6 +184,12 @@ const LandingPage = ({ apiStatus, refreshApiStatus }) => {
       setCurrentQuote(randomQuote);
       setShowQuote(true);
       
+      // Play alarm sound
+      if (alarmSoundRef.current) {
+        alarmSoundRef.current.currentTime = 0;
+        alarmSoundRef.current.play().catch(e => console.log("Audio playback error:", e));
+      }
+      
       // Pause the game while showing the quote
       pauseGame();
       
@@ -222,6 +229,13 @@ const LandingPage = ({ apiStatus, refreshApiStatus }) => {
 
   return (
     <div className="landing-page">
+      {/* Sound effect for quote popup */}
+      <audio
+        ref={alarmSoundRef}
+        src="https://www.soundjay.com/buttons/sounds/beep-08b.mp3"
+        preload="auto"
+      />
+      
       <div className="container">
         <div className="hero-section">
           <div className="hero-content">
