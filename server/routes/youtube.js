@@ -339,17 +339,29 @@ async function fetchVideoInfoFallback(videoId) {
   }
 }
 
-// Helper function to retry API calls
-async function retryOperation(operation, maxRetries = 3, delay = 1000) {
+// Helper function to retry API calls with timeout
+async function retryOperationWithTimeout(operation, timeoutMs = 30000, maxRetries = 3, delay = 1000) {
   let lastError;
   
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       console.log(`Attempt ${attempt}/${maxRetries}...`);
-      return await operation();
+      
+      // Create a promise that will reject after the timeout
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error(`Operation timed out after ${timeoutMs}ms`)), timeoutMs)
+      );
+      
+      // Race the operation against the timeout
+      return await Promise.race([operation(), timeoutPromise]);
     } catch (error) {
       console.log(`Attempt ${attempt} failed: ${error.message}`);
       lastError = error;
+      
+      // If this was a timeout error and we've reached max retries, throw a more descriptive error
+      if (attempt === maxRetries && error.message.includes('timed out')) {
+        throw new Error(`YouTube API request timed out after ${maxRetries} attempts. This may indicate YouTube API rate limiting or server issues.`);
+      }
       
       // Don't wait on the last attempt
       if (attempt < maxRetries) {
@@ -779,7 +791,7 @@ router.post('/extract-and-transcribe', async (req, res) => {
       // Try fallback method
       try {
         const videoId = extractVideoId(videoUrl);
-        videoInfo = await retryOperation(async () => {
+        videoInfo = await retryOperationWithTimeout(async () => {
           return await fetchVideoInfoFallback(videoId);
         }, 2, 1000); // 2 retries with 1 second initial delay
         console.log('Successfully fetched video info using fallback method');
@@ -1092,7 +1104,7 @@ router.get('/video-info', async (req, res) => {
       console.log('Attempting to fetch info with yt-dlp...');
       
       // Use youtube-dl-exec with retry mechanism
-      const ytdlpResult = await retryOperation(async () => {
+      const ytdlpResult = await retryOperationWithTimeout(async () => {
         return await youtubeDl(cleanUrl, {
           dumpSingleJson: true,
           noCheckCertificate: true,
@@ -1100,7 +1112,7 @@ router.get('/video-info', async (req, res) => {
           skipDownload: true,
           simulate: true
         });
-      }, 3, 2000); // 3 retries with 2 second initial delay
+      }, 30000, 3, 2000); // 30 sec timeout, 3 retries, 2 second initial delay
       
       console.log('Successfully fetched video info using yt-dlp');
       
@@ -1124,7 +1136,7 @@ router.get('/video-info', async (req, res) => {
       try {
         // Fallback to our custom method if yt-dlp fails
         console.log('Attempting to use fallback method...');
-        info = await retryOperation(async () => {
+        info = await retryOperationWithTimeout(async () => {
           return await fetchVideoInfoFallback(videoId);
         }, 2, 1000); // 2 retries with 1 second initial delay
         console.log('Successfully fetched video info using fallback method');
