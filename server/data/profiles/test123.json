@@ -1,0 +1,17 @@
+{
+  "userId": "test123",
+  "age": 30,
+  "gender": "Male",
+  "currentWeight": 80,
+  "currentHeight": 180,
+  "activityLevel": "Moderate",
+  "targetWeight": 75,
+  "updatedAt": "2025-04-23T02:27:20.208Z",
+  "createdAt": "2025-04-23T02:26:58.794Z",
+  "macroGoals": {
+    "protein": 150,
+    "carbs": 200,
+    "fats": 60,
+    "calories": 2000
+  }
+}
