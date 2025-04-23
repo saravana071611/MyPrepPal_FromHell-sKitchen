@@ -52,6 +52,8 @@ router.post('/profile', (req, res) => {
       return res.status(400).json({ error: 'User ID is required' });
     }
     
+    console.log('[UserProfile] Saving profile for user:', userId);
+    
     const userProfile = {
       userId,
       age: parseInt(age) || null,
@@ -64,8 +66,29 @@ router.post('/profile', (req, res) => {
       updatedAt: new Date().toISOString()
     };
     
+    // Make sure the profiles directory exists
+    if (!fs.existsSync(PROFILES_DIR)) {
+      console.log('[UserProfile] Creating profiles directory');
+      fs.mkdirSync(PROFILES_DIR, { recursive: true });
+    }
+    
     const filePath = path.join(PROFILES_DIR, `${userId}.json`);
-    fs.writeFileSync(filePath, JSON.stringify(userProfile, null, 2));
+    console.log('[UserProfile] Writing to file:', filePath);
+    
+    try {
+      fs.writeFileSync(filePath, JSON.stringify(userProfile, null, 2));
+      console.log('[UserProfile] File written successfully');
+      
+      // Verify the file was written
+      if (fs.existsSync(filePath)) {
+        console.log('[UserProfile] File exists after write');
+      } else {
+        console.log('[UserProfile] WARNING: File does not exist after write!');
+      }
+    } catch (writeError) {
+      console.error('[UserProfile] Error writing file:', writeError);
+      throw writeError;
+    }
     
     res.json({ 
       success: true, 

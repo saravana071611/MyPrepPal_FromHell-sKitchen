@@ -105,8 +105,26 @@ const ensureSocketConnection = () => {
 export const apiClient = {
   // OpenAI API calls
   getFitnessAssessment: (userData) => {
+    console.log('Calling fitness assessment with data:', userData);
     return api.post('/api/openai/fitness-assessment', userData, {
-      timeout: 90000 // 90 seconds for potentially long OpenAI calls
+      timeout: 180000 // 3 minutes for potentially long OpenAI calls
+    }).catch(error => {
+      console.error('Fitness assessment API error:', error);
+      
+      // Add additional error details
+      if (error.response) {
+        console.error('Error response data:', error.response.data);
+        console.error('Error response status:', error.response.status);
+      } else if (error.request) {
+        console.error('No response received from server - possible timeout or server crash');
+        console.error('Request details:', error.request);
+      } else if (error.code === 'ECONNRESET') {
+        console.error('Connection reset by server. The server might have crashed during processing.');
+      } else {
+        console.error('Error setting up request:', error.message);
+      }
+      
+      throw error; // Re-throw for component to handle
     });
   },
   
@@ -127,6 +145,35 @@ export const apiClient = {
       }
       throw error; // Re-throw for component to handle
     });
+  },
+  
+  // Meal Prep API calls
+  processMealPrep: async (videoUrl) => {
+    console.log('Calling meal prep processing with URL:', videoUrl);
+    return api.post('/api/process-recipe', 
+      { videoUrl }, 
+      { timeout: 120000 } // 2 minutes for initial call
+    );
+  },
+  
+  getMealPrepStatus: (processingId) => {
+    return api.get(`/api/process-status/${processingId}`, {
+      timeout: 30000 // 30 seconds for status check
+    });
+  },
+  
+  getMealPrepData: (processingId) => {
+    return api.get(`/api/meal-prep/${processingId}`, {
+      timeout: 30000 // 30 seconds for data retrieval
+    });
+  },
+  
+  generateFromTranscription: (transcription) => {
+    console.log('Generating meal prep from transcription');
+    return api.post('/api/generate-from-transcription', 
+      { transcription }, 
+      { timeout: 180000 } // 3 minutes for generation
+    );
   },
   
   transcribeAudio: async (data) => {

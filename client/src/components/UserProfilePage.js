@@ -233,10 +233,18 @@ THE BOTTOM LINE: Train 5-6 days/week. Progressive overload - add weight or reps 
       } else if (error.request) {
         // The request was made but no response was received
         console.error('No response received:', error.request);
-        setError('Failed to submit profile: No response from server. Please check your connection.');
+        
+        // Check if it's a timeout issue
+        if (error.code === 'ECONNABORTED') {
+          setError('Request timed out. The server is taking too long to respond. Please try again later.');
+        } else {
+          setError('Failed to submit profile: No response from server. Please check your connection.');
+        }
       } else if (error.code === 'ECONNRESET') {
         // Handle connection reset errors
-        setError('The connection to the server was reset. This might be due to a timeout. Please try again.');
+        console.error('Connection reset error details:', error);
+        setError(`Connection reset by the server. This usually happens when the server crashed during processing. 
+                 Please try again or contact support if the issue persists.`);
       } else {
         // Something happened in setting up the request that triggered an Error
         console.error('Error message:', error.message);
