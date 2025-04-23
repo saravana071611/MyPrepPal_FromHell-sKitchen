@@ -1,0 +1,11 @@
+{
+  "status": "completed",
+  "message": "Recipe processing completed successfully",
+  "result": {
+    "mealPrepInfo": {
+      "groceryList": "1. 1 package whole wheat phyllo dough\n2. 2 tablespoons extra-virgin olive oil\n3. 2 cups fresh spinach\n4. 1 large red bell pepper, diced\n5. 1 large yellow bell pepper, diced\n6. 1 medium red onion, finely chopped\n7. 2 cloves garlic, minced\n8. 1 cup cherry tomatoes, halved\n9. 200g feta cheese, crumbled\n10. 1/2 cup low-fat milk\n11. 4 large free-range eggs\n12. Sea salt to taste\n13. Freshly ground black pepper to taste\n14. 1 tablespoon fresh dill, chopped\n15. 1 tablespoon fresh parsley, chopped",
+      "cookingMethod": "1. Preheat the oven to 375°F.\n2. Lay out 10 sheets of whole wheat phyllo dough, brushing each with a touch of olive oil before adding the next.\n3. In a large pan, sauté a diced onion, two diced bell peppers, and two cloves of minced garlic in a tablespoon of olive oil over medium heat until softened.\n4. Stir in two cups of chopped spinach, cooking until wilted.\n5. Season vegetables with salt and pepper to taste, then remove from heat.\n6. In a separate bowl, whisk together 5 eggs, a half cup of feta cheese, and a quarter cup of chopped fresh dill.\n7. Combine the vegetables with the egg mixture.\n8. Pour the mixture onto the prepared phyllo dough and fold the edges over the top.\n9. Bake in the preheated oven for 30-35 minutes, or until the filling is set and the phyllo is golden brown.\n10. Remove from oven and let cool for 10 minutes before slicing into 5 portions.\n11. Serve with a side salad or store in the refrigerator for meal prep."
+    },
+    "timestamp": "2025-04-23T04:14:50.681Z"
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "status": "error",
+  "message": "Transcription failed: Connection error.",
+  "error": "Error: Transcription failed: Connection error.\n    at MealPrepController.getTranscript (C:\\Users\\sarav\\GitRepositories\\MyPrepPal_FromHell-sKitchen\\server\\meal-prep-controller.js:712:15)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async MealPrepController.processRecipeVideo (C:\\Users\\sarav\\GitRepositories\\MyPrepPal_FromHell-sKitchen\\server\\meal-prep-controller.js:61:26)\n    at async MealPrepService.processRecipe (C:\\Users\\sarav\\GitRepositories\\MyPrepPal_FromHell-sKitchen\\server\\meal-prep-service.js:43:22)",
+  "timestamp": "2025-04-23T04:06:35.562Z"
+}

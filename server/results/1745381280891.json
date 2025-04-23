@@ -1,0 +1,11 @@
+{
+  "status": "completed",
+  "message": "Recipe processing completed successfully",
+  "result": {
+    "mealPrepInfo": {
+      "groceryList": "1. 2 large free-range chicken breasts\n2. 1 tablespoon olive oil\n3. 2 cloves fresh garlic, minced\n4. 2 cups high-quality chicken broth\n5. 1 cup fresh carrots, diced\n6. 1 cup fresh peas\n7. 1 cup fresh white onion, diced\n8. 1 teaspoon salt\n9. 1 teaspoon fresh ground black pepper\n10. 1 teaspoon dried thyme\n11. 1/2 cup all-purpose flour\n12. 2 cups low-sodium chicken stock\n13. 1 sheet of puff pastry\n14. 1 free-range egg, beaten\n15. Olive oil spray for coating the pastry.",
+      "cookingMethod": "1. Preheat oven to 375°F.\n2. Cut chicken into bite-sized pieces and season with salt and pepper.\n3. Heat olive oil in a large pan over medium-high heat.\n4. Sear chicken in the pan for 4 minutes each side, until golden brown.\n5. Remove chicken from pan and set aside.\n6. In the same pan, sauté finely diced onion, celery, and carrots until softened.\n7. Stir in minced garlic and cook for another minute until aromatic.\n8. Sprinkle flour over the vegetables and stir until well coated.\n9. Slowly pour in chicken broth, stirring constantly to create a smooth gravy.\n10. Return chicken to the pan, lower the heat and simmer for 10 minutes.\n11. Roll out the pie crust on a lightly floured surface.\n12. Transfer chicken and vegetable mixture into a pie dish.\n13. Cover the dish with the pie crust, trim the excess and crimp the edges.\n14. Cut slits in the top of the crust for ventilation.\n15. Lightly brush the crust with olive oil.\n16. Bake in the preheated oven for 25-30 minutes, until the crust is golden and the filling is bubbling.\n17. Let the pie rest for 5 minutes before serving.\n18. Divide the pie into 5 portions.\n19. Store the remaining portions in airtight containers and refrigerate."
+    },
+    "timestamp": "2025-04-23T04:09:05.980Z"
+  }
+}
