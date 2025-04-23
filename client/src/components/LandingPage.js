@@ -186,11 +186,11 @@ const LandingPage = ({ apiStatus, refreshApiStatus }) => {
       // Pause the game while showing the quote
       pauseGame();
       
-      // Hide quote after 2 seconds and resume game
+      // Hide quote after 4 seconds and resume game
       setTimeout(() => {
         setShowQuote(false);
         resumeGame();
-      }, 2000);
+      }, 4000);
     }
   };
 
