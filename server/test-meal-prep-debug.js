@@ -8,21 +8,41 @@ const fs = require('fs');
 const path = require('path');
 
 // Use a mock transcription if needed
-const mockTranscription = `Hello everyone, welcome to my cooking channel. Today I'm going to show you how to make a delicious and healthy meal that's perfect for meal prep.
+const mockTranscription = `Hello everyone, welcome to my cooking channel. Today I'm going to show you how to make a chicken pot pie.
 
-We'll start with some chicken breast, about 500 grams. Season it with salt, pepper, garlic powder, and paprika. Heat a tablespoon of olive oil in a pan over medium-high heat.
+For this recipe, you'll need:
+- 1 rotisserie chicken, shredded
+- 1 cup of frozen peas
+- 8 ounces of mushrooms, sliced
+- 1 medium onion, chopped
+- 2 carrots, diced
+- 3 tablespoons of butter
+- 1/3 cup of all-purpose flour
+- 2 cups of chicken broth
+- 1/2 cup of heavy cream
+- 1 tablespoon of fresh parsley, chopped
+- Salt and pepper to taste
+- 2 pie crusts (top and bottom)
 
-While the pan is heating, let's chop one onion, two cloves of garlic, and some bell peppers - one red and one yellow for color. Also prepare some broccoli florets and slice two medium carrots.
+Let's start by preheating the oven to 400°F.
 
-Once the pan is hot, add the chicken and cook for about 5-6 minutes on each side until golden brown and cooked through. Remove the chicken and set aside.
+In a large pot, melt the butter over medium heat. Add the onions and carrots and cook for about 8 minutes until they start to soften.
 
-In the same pan, add the onions and garlic. Sauté for about 2 minutes until fragrant. Then add the bell peppers, carrots, and broccoli. Cook for another 5 minutes until vegetables start to soften but still have some crunch.
+Add the mushrooms and continue cooking for another 5 minutes.
 
-Now, slice the chicken into strips and add it back to the pan with the vegetables. Add a splash of soy sauce, a tablespoon of honey, and a teaspoon of sriracha for some heat. Stir everything together.
+Sprinkle the flour over the vegetables and cook, stirring constantly, for about 2 minutes.
 
-For serving, prepare some brown rice or quinoa. This recipe makes about 4-5 portions, perfect for your weekly meal prep. Each portion has approximately 30 grams of protein, 45 grams of carbs, and 12 grams of fat.
+Slowly pour in the chicken broth and heavy cream, stirring continuously until the mixture thickens.
 
-Store in airtight containers in the refrigerator for up to 4 days. Enjoy your healthy, delicious meal!`;
+Add the shredded chicken, peas, and parsley. Season with salt and pepper to taste.
+
+Line a pie dish with one of the pie crusts, pour in the filling, then top with the second crust. Crimp the edges to seal and cut a few slits in the top crust to allow steam to escape.
+
+Bake for 30-35 minutes until the crust is golden brown.
+
+Let it cool for 10 minutes before serving.
+
+This makes a delicious and comforting meal that's perfect for family dinners.`;
 
 async function debugMealPrepGeneration() {
   console.log('=== MyPrepPal - Meal Prep Debugging ===');
@@ -37,7 +57,7 @@ async function debugMealPrepGeneration() {
   
   try {
     // First test direct generation from transcription text
-    console.log('Testing direct Gordon review generation...');
+    console.log('\nGenerating Gordon\'s review...');
     const gordonReview = await controller.getGordonReview(mockTranscription);
     
     // Save the gordon review to a file for inspection
@@ -45,52 +65,66 @@ async function debugMealPrepGeneration() {
     fs.writeFileSync(reviewFilePath, gordonReview);
     console.log(`Gordon review saved to: ${reviewFilePath}`);
     
-    // Test the complete flow with a video URL
-    console.log('\nTesting complete flow with a YouTube video...');
-    const videoUrl = 'https://www.youtube.com/watch?v=W1XELWKaCi4'; // Default test video
+    // Generate detailed feedback
+    console.log('\nGenerating detailed recipe feedback...');
+    const recipeFeedback = await controller.getRecipeFeedback(
+      mockTranscription, 
+      gordonReview
+    );
     
-    // Status callback to show progress
-    const statusCallback = (status) => {
-      console.log(`Status: ${status.status}${status.message ? ' - ' + status.message : ''}`);
+    // Generate macro analysis
+    console.log('\nGenerating macro nutritional analysis...');
+    const macroAnalysis = await controller.getMacroAnalysis(gordonReview);
+    
+    // Generate grocery list
+    console.log('\nGenerating structured grocery list...');
+    const structuredGroceryList = await controller.getStructuredGroceryList(gordonReview);
+    
+    // Generate cooking method
+    console.log('\nGenerating detailed cooking method...');
+    const detailedCookingMethod = await controller.getDetailedCookingMethod(gordonReview);
+    
+    // Generate storage instructions
+    console.log('\nGenerating storage instructions...');
+    const storageInstructions = await controller.getStorageInstructions(gordonReview);
+    
+    // Combine all information
+    const mealPrepInfo = {
+      raw: gordonReview,
+      feedback: recipeFeedback,
+      groceryList: structuredGroceryList,
+      instructions: detailedCookingMethod,
+      macros: macroAnalysis,
+      storage: storageInstructions
     };
     
-    const result = await controller.processRecipeVideo(videoUrl, {
-      statusCallback,
-      useTranscriptionText: mockTranscription // Optional: use mock transcription instead of downloading
-    });
+    // Save the meal prep info to a file
+    const outputPath = path.join(__dirname, 'results', `test_meal_prep_${Date.now()}.json`);
+    fs.writeFileSync(outputPath, JSON.stringify(mealPrepInfo, null, 2));
     
     console.timeEnd('Total processing time');
+    console.log(`\nMeal prep data saved to: ${outputPath}`);
     
-    if (result.success) {
-      console.log('\n=== Success! ===');
-      console.log(`Output file: ${result.outputFilePath}`);
-      
-      // Display the meal prep information
-      console.log('\n=== GORDON RAMSAY\'S MEAL PREP INSTRUCTIONS ===');
-      
-      console.log('\n--- RECIPE FEEDBACK ---');
-      console.log(result.mealPrepInfo.feedback ? result.mealPrepInfo.feedback.substring(0, 100) + '...' : 'No feedback available');
-      
-      console.log('\n--- GROCERY LIST (5 PORTIONS) ---');
-      console.log(result.mealPrepInfo.groceryList ? result.mealPrepInfo.groceryList.substring(0, 100) + '...' : 'No grocery list available');
-      
-      console.log('\n--- COOKING INSTRUCTIONS ---');
-      console.log(result.mealPrepInfo.instructions ? result.mealPrepInfo.instructions.substring(0, 100) + '...' : 'No cooking instructions available');
-      
-      console.log('\n--- MACRO NUTRITIONAL INFORMATION ---');
-      console.log(result.mealPrepInfo.macros ? result.mealPrepInfo.macros.substring(0, 100) + '...' : 'No macro information available');
-      
-      console.log('\n--- STORAGE AND REHEATING ---');
-      console.log(result.mealPrepInfo.storage ? result.mealPrepInfo.storage.substring(0, 100) + '...' : 'No storage information available');
-      
-      console.log('\n==============================================');
-    } else {
-      console.error('\n=== Failed! ===');
-      console.error(`Error: ${result.error}`);
-      if (result.details) {
-        console.error('Details:', result.details);
-      }
-    }
+    // Display the meal prep information summary
+    console.log('\n=== GORDON RAMSAY\'S MEAL PREP INSTRUCTIONS ===');
+    
+    console.log('\n--- RECIPE FEEDBACK ---');
+    console.log(recipeFeedback ? recipeFeedback.substring(0, 100) + '...' : 'No feedback available');
+    
+    console.log('\n--- GROCERY LIST (5 PORTIONS) ---');
+    console.log(structuredGroceryList ? structuredGroceryList.substring(0, 100) + '...' : 'No grocery list available');
+    
+    console.log('\n--- COOKING INSTRUCTIONS ---');
+    console.log(detailedCookingMethod ? detailedCookingMethod.substring(0, 100) + '...' : 'No cooking instructions available');
+    
+    console.log('\n--- MACRO NUTRITIONAL INFORMATION ---');
+    console.log(macroAnalysis ? macroAnalysis.substring(0, 100) + '...' : 'No macro information available');
+    
+    console.log('\n--- STORAGE AND REHEATING ---');
+    console.log(storageInstructions ? storageInstructions.substring(0, 100) + '...' : 'No storage information available');
+    
+    console.log('\n==============================================');
+    
   } catch (error) {
     console.timeEnd('Total processing time');
     console.error('\n=== Error! ===');

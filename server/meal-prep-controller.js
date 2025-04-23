@@ -16,26 +16,28 @@ const TranscriptionService = require('./utils/transcription-service');
 
 class MealPrepController {
   constructor(options = {}) {
-    this.apiKey = options.apiKey || process.env.OPENAI_API_KEY;
-    this.tempDir = options.tempDir || path.join(__dirname, 'temp');
-    this.debug = options.debug || false;
+    // Destructure options with defaults
+    const { 
+      openaiApiKey = process.env.OPENAI_API_KEY,
+      debug = false,
+      resultsDir = path.join(__dirname, 'results') 
+    } = options;
     
-    // Ensure API key is set
-    if (!this.apiKey) {
-      throw new Error('OpenAI API key is required');
-    }
-    
-    // Initialize the TranscriptionService
-    this.transcriptionService = new TranscriptionService({
-      apiKey: this.apiKey,
-      tempDir: this.tempDir,
-      debug: this.debug
-    });
-    
-    // Initialize OpenAI client
+    // Set up the OpenAI client
     this.openai = new OpenAI({
-      apiKey: this.apiKey
+      apiKey: openaiApiKey
     });
+    
+    // Set the debug flag
+    this.debug = debug;
+    
+    // Set the results directory
+    this.resultsDir = resultsDir;
+    
+    // Create the results directory if it doesn't exist
+    if (!fs.existsSync(this.resultsDir)) {
+      fs.mkdirSync(this.resultsDir, { recursive: true });
+    }
     
     this.log('MealPrepController initialized');
   }
@@ -201,6 +203,9 @@ class MealPrepController {
     let baseGroceryList = '';
     if (match && match[1] && match[1].trim().length > 0) {
       baseGroceryList = match[1].trim();
+      this.log('Found grocery list in Gordon\'s review using regex');
+    } else {
+      this.log('No grocery list found in Gordon\'s review using regex');
     }
 
     const prompt = `
@@ -223,6 +228,7 @@ class MealPrepController {
     ${baseGroceryList ? 'Original Grocery List: ' + baseGroceryList : ''}
     `;
 
+    this.log('Calling OpenAI to generate structured grocery list');
     const response = await this.openai.chat.completions.create({
       model: "gpt-4", 
       messages: [
@@ -240,29 +246,42 @@ class MealPrepController {
     
     // If OpenAI returns a placeholder or error message, fallback to extracting from the instructions
     if (generatedGroceryList.includes("haven't provided") || generatedGroceryList.includes("no grocery list")) {
+      this.log('OpenAI returned a placeholder message, falling back to alternative extraction methods');
+      
       // Try to extract grocery list from the instructions field if it exists
       const instructionsMatch = gordonReview.match(/instructions[^:]*:([^]*?)(?=\n\s*\n\s*storage|\n\s*\n\s*meal\s*prep|$)/i);
       
       if (instructionsMatch && instructionsMatch[1]) {
         const instructions = instructionsMatch[1].trim();
+        this.log('Found instructions section, checking for ingredients');
         
         // Look for ingredients section within instructions
         const ingredientsMatch = instructions.match(/ingredients[^:]*:([^]*?)(?=\n\s*\n|\n\s*step|\n\s*[0-9]+\.|$)/i);
         
         if (ingredientsMatch && ingredientsMatch[1]) {
+          this.log('Found ingredients section within instructions');
           return ingredientsMatch[1].trim();
+        } else {
+          this.log('No ingredients section found within instructions');
         }
+      } else {
+        this.log('No instructions section found in Gordon\'s review');
       }
       
       // If we can't find a proper grocery list, extract ingredients from the raw recipe text
+      this.log('Attempting to extract ingredients using regex patterns');
       const ingredientsRegex = /\b(?:[\d]+(?:\.|\/|,|\s|-)(?:\s*\d+\/\d+|\s*\d+)?\s*(?:cup|tbsp|tablespoon|tsp|teaspoon|oz|ounce|pound|lb|gram|kg|slice|clove|bunch|handful|piece|can|package|bottle)\s+[a-zA-Z\s]+|\d+\s+[a-zA-Z]+(?:\s+[a-zA-Z]+)*)\b/gi;
       const ingredientsMatches = gordonReview.match(ingredientsRegex);
       
       if (ingredientsMatches && ingredientsMatches.length > 0) {
+        this.log(`Found ${ingredientsMatches.length} ingredients using regex pattern`);
         return "GROCERY LIST:\n\n" + ingredientsMatches.join("\n");
+      } else {
+        this.log('No ingredients found using regex pattern');
       }
       
       // Last resort - extract the numbered list that might be ingredients
+      this.log('Attempting to extract ingredients from numbered list');
       const numberedListRegex = /\d+\.\s*\*\*([^*]+)\*\*:/g;
       let numberedMatch;
       let ingredients = [];
@@ -272,12 +291,17 @@ class MealPrepController {
       }
       
       if (ingredients.length > 0) {
+        this.log(`Found ${ingredients.length} ingredients in numbered list`);
         return "GROCERY LIST:\n\n" + ingredients.join("\n");
+      } else {
+        this.log('No ingredients found in numbered list');
       }
       
+      this.log('All extraction methods failed, returning fallback message');
       return "GROCERY LIST:\n\nCouldn't extract the grocery list from the recipe. Please check the raw recipe text for ingredients.";
     }
     
+    this.log('Successfully generated structured grocery list');
     return generatedGroceryList;
   }
   
