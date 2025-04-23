@@ -1090,12 +1090,6 @@ router.get('/video-info', async (req, res) => {
       return res.status(400).json({ error: 'Could not extract video ID from the provided URL. Please ensure it is a valid YouTube video URL.' });
     }
     
-    // Set a short timeout for the initial ytdl-core attempt
-    const timeout = 30000; // 30 seconds timeout (increased from 8 seconds)
-    const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('YouTube API request timed out')), timeout)
-    );
-    
     let info;
     let usedFallback = false;
     

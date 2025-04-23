@@ -1,5 +1,100 @@
 {
   "id": {},
-  "status": "processing",
-  "timestamp": 1745377784604
+  "status": "completed",
+  "url": "https://www.youtube.com/watch?v=W1XELWKaCi4",
+  "timestamp": 1745379234476,
+  "recipe": {
+    "name": "Ultimate Chicken Pot Pie",
+    "description": "A deliciously comforting chicken pot pie with a super easy flaky buttery pie crust. This pie is filled with a well-seasoned mixture of shredded chicken, vegetables, and a thick gravy, all encased in a homemade pie crust. It's a meal in itself and reheats well the next day."
+  },
+  "ingredients": [
+    {
+      "name": "cooked shredded chicken",
+      "quantity": 4,
+      "unit": "cups"
+    },
+    {
+      "name": "mushrooms",
+      "quantity": 8,
+      "unit": "ounces"
+    },
+    {
+      "name": "medium yellow onion",
+      "quantity": 1,
+      "unit": ""
+    },
+    {
+      "name": "medium carrots",
+      "quantity": 2,
+      "unit": ""
+    },
+    {
+      "name": "large garlic cloves",
+      "quantity": 3,
+      "unit": ""
+    },
+    {
+      "name": "fresh parsley",
+      "quantity": 0.25,
+      "unit": "cup"
+    },
+    {
+      "name": "butter",
+      "quantity": 6,
+      "unit": "tablespoons"
+    },
+    {
+      "name": "all-purpose flour",
+      "quantity": 0.33,
+      "unit": "cup"
+    },
+    {
+      "name": "chicken broth",
+      "quantity": 2,
+      "unit": "cups"
+    },
+    {
+      "name": "heavy whipping cream",
+      "quantity": 0.5,
+      "unit": "cup"
+    },
+    {
+      "name": "salt",
+      "quantity": 2,
+      "unit": "teaspoons"
+    },
+    {
+      "name": "black pepper",
+      "quantity": 0.25,
+      "unit": "teaspoon"
+    },
+    {
+      "name": "frozen peas",
+      "quantity": 1,
+      "unit": "cup"
+    },
+    {
+      "name": "homemade pie crust",
+      "quantity": 2,
+      "unit": "discs"
+    },
+    {
+      "name": "large egg",
+      "quantity": 1,
+      "unit": ""
+    },
+    {
+      "name": "coarse salt",
+      "quantity": "",
+      "unit": "for garnish"
+    },
+    {
+      "name": "black pepper",
+      "quantity": "",
+      "unit": "for garnish"
+    }
+  ],
+  "cookingInstructions": "1. First things first, let's prep the veg. Finely chop the yellow onion, the carrots, and garlic, and slice the mushrooms. Grab your parsley, finely chop it as well and set everything to the side. It's all about the mise en place, love. Everything needs to be prepared before we start banging around those pots and pans. Heat your chicken up and shred it into bite-sized pieces.\n\n2. Now get your pan bloody hot with butter and start cooking your vegetables. Chuck in the onions, carrots, garlic, and mushrooms. Let them sweat it out until they're nice and tender, but don't brown them too much. Get the textures spot on first - it's essential.\n\n3. Sprinkle in that flour like it's fairy dust - little by little. You're not baking a bloody cake, you're making a roux to thicken your sauce. Stir it continuously so it doesn't burn. \n\n4. Now it's time to pour that chicken broth — bit by bit. Keep stirring, you donut, until it gets nice and thick. Add your cream, a pinch of salt, and black pepper. Taste as you go. This is the base of your pot pie. You want it to taste as delicious as a 5-star restaurant, don't you?\n\n5. Toss in your shredded chicken, peas, and parsley. Give it a nice mix, liven it up. Let the flavours become mates — it's a party in there. Let that simmer a bit so the chicken and peas pick up all those beautiful flavors.\n\n6. Now, get your bloody pie crust from the fridge and roll it out. No parchment paper? What are you a rookie? Use it or say goodbye to a perfect crust. Fill your crust with your seasoned chicken filling. Top it off with the second pie crust, seal and flute the edges. Slice a few vents in the top.\n\n7. Whisk your egg like it owes you money. Brush it over the top of the pie. Sprinkle coarse salt and black pepper on top — let's get a nice crust going here.\n\n8. Bake the bloody thing. Nice and hot at 375°F (190°C) for about 35-40 minutes or until golden brown. Keep an eye on it — no texting, no \"quick\" phone calls. You're baking a masterpiece, so pay attention! Let it rest about 15 mins before you cut in. And voila, there you have it. Your chicken pot pie is ready. Now sit back and prepare for your taste buds to be blown away. Best chicken pot pie ever. Done!",
+  "mealPrepInstructions": "1. **Prepping ahead**: Start by getting your ingredients blitzed, it's crucial, alright? Season and cook your chicken, then let it cool before you shred it. Dice your mushrooms, onion, and carrots, and crush your garlic cloves. Mince your parsley. Now, don't get all bloody lazy and let these veg soak up fridge odors; seal these in individual airtight containers - flavor is king, remember? Pie crusts can be made, shaped into discs, and kept fridged or frozen until you need them. If you're knee deep in time, you can make the entire filling, cool it, and store it in a tight lid casserole, ready for that delicious crust topping come pie-making day. \n\n2. **Storing the prepared meal**: Once your pie has cooled down, it's time to get it tucked away. Whole, slices, doesn't matter. Wrap it tightly in cling film, then again in aluminum foil. Now listen here: this isn't a ready-meal from a dodgy takeaway. Make sure it's fully chilled in the fridge before freezing, dears. \n\n3. **Reheating with gusto**: Ready for another round of comfort food heaven, are we? From frozen, thaw overnight in the fridge. Pre-heat your oven to 375°F (190°C). Reheat the pie uncovered for about 10-15 minutes until heated through and the crust is crispy. It's bloody vital that you don't allow it to dry out - if it starts to, whip up some aluminum foil and tent over the pie.\n\n4. **Fridge/freezer longevity**: Handled properly, your cherished chicken pot pie will last 3-4 days in the fridge. Be bold and venture into the freezer, and we're talking a good two months with top-notch flavor and texture intact. Perfect for a bloody quick dinner when you're caught in a spin.\n\nRemember, food isn't just fuel. It's bloody passion. Respect the ingredients, and they'll respect you. Now off you go, make some kitchen magic.",
+  "gordonReview": "Bloody hell, \"ultimate\" chicken pot pie? Well-seasoned, my foot. It's got the flavor of my old boot, and the phrase 'a meal in itself' screams redundancy. Should've saved that energy to properly season this disaster. Shredded chicken, veggies, gravy, yet you've made it as exciting as a tax return. This recipe is essentially a crime scene in a crust. What a letdown!"
 }

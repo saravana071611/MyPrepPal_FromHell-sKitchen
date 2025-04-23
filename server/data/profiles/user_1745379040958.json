@@ -1,0 +1,17 @@
+{
+  "userId": "user_1745379040958",
+  "age": 45,
+  "gender": "male",
+  "currentWeight": 99,
+  "currentHeight": 177,
+  "activityLevel": "light",
+  "targetWeight": 88,
+  "updatedAt": "2025-04-23T03:31:33.855Z",
+  "createdAt": "2025-04-23T03:30:59.534Z",
+  "macroGoals": {
+    "protein": 160,
+    "carbs": 150,
+    "fats": 70,
+    "calories": 2000
+  }
+}

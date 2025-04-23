@@ -39,6 +39,11 @@ class MealPrepController {
       fs.mkdirSync(this.resultsDir, { recursive: true });
     }
     
+    // Add TranscriptionService
+    this.transcriptionService = new TranscriptionService({
+      debug: this.debug
+    });
+    
     this.log('MealPrepController initialized');
   }
   
@@ -777,18 +782,21 @@ class MealPrepController {
     this.log(`Getting transcript from ${url}`);
     
     try {
-      // Mock implementation - replace with actual YouTube transcript extraction
-      // In a real implementation, you would use a library like youtube-transcript-api
-      return `This is a sample transcript for the YouTube video at ${url}. 
-      In this video, we're making a delicious chicken stir fry with vegetables.
-      Start by cutting the chicken into small pieces and marinating with soy sauce.
-      Then chop the vegetables - bell peppers, broccoli, and carrots.
-      Heat oil in a wok and stir fry the chicken until golden brown.
-      Add the vegetables and stir fry for another 3-4 minutes.
-      Pour in the sauce and cook until everything is well coated and the sauce thickens.
-      Serve hot with rice or noodles.`;
+      // Use the real transcription service
+      const result = await this.transcriptionService.extractAndTranscribe(url, {
+        progressCallback: (progress) => {
+          this.log(`Transcription progress: ${progress.stage} - ${progress.progress}% - ${progress.message}`);
+        }
+      });
+      
+      if (!result.success) {
+        throw new Error(`Transcription failed: ${result.error}`);
+      }
+      
+      this.log(`Transcription completed successfully: ${result.transcription.textPath}`);
+      return result.transcription.text;
     } catch (error) {
-      this.log(`Error getting transcript: ${error.message}`);
+      this.log(`Error getting transcript: ${error.message}`, true);
       throw error;
     }
   }
