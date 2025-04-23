@@ -28,31 +28,8 @@ const Header = () => {
             <li className={location.pathname === '/profile' ? 'active' : ''}>
               <Link to="/profile">Profile</Link>
             </li>
-            <li className={location.pathname === '/recipe-extractor' ? 'active' : ''}>
-              <Link to="/recipe-extractor">Recipe Extractor</Link>
-            </li>
             <li className={location.pathname === '/extract-and-prep' ? 'active' : ''}>
               <Link to="/extract-and-prep">Extract & Prep</Link>
-            </li>
-            <li className="dev-menu-toggle">
-              <button onClick={toggleDevMenu}>
-                Dev Tools {showDevMenu ? '▲' : '▼'}
-              </button>
-              {showDevMenu && (
-                <div className="dev-dropdown">
-                  <ul>
-                    <li className={location.pathname === '/test-socket' ? 'active' : ''}>
-                      <Link to="/test-socket">Socket Tester</Link>
-                    </li>
-                    <li className={location.pathname === '/recipe-tester' ? 'active' : ''}>
-                      <Link to="/recipe-tester">Recipe Tester</Link>
-                    </li>
-                    <li className={location.pathname === '/youtube-extractor' ? 'active' : ''}>
-                      <Link to="/youtube-extractor">YouTube Extractor</Link>
-                    </li>
-                  </ul>
-                </div>
-              )}
             </li>
           </ul>
         </nav>

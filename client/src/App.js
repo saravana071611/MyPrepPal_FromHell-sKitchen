@@ -8,10 +8,6 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import LandingPage from './components/LandingPage';
 import UserProfilePage from './components/UserProfilePage';
-import RecipeExtractorPage from './components/RecipeExtractorPage';
-import TestSocketPage from './components/TestSocketPage';
-import RecipeExtractorTester from './components/RecipeExtractorTester';
-import YouTubeAudioExtractor from './components/YouTubeAudioExtractor';
 import ExtractAndPrepPage from './components/ExtractAndPrepPage';
 
 // Styles
@@ -63,10 +59,6 @@ function App() {
           <Routes>
             <Route path="/" element={<LandingPage apiStatus={apiStatus} refreshApiStatus={refreshApiStatus} />} />
             <Route path="/profile" element={<UserProfilePage />} />
-            <Route path="/recipe-extractor" element={<RecipeExtractorPage />} />
-            <Route path="/test-socket" element={<TestSocketPage />} />
-            <Route path="/recipe-tester" element={<RecipeExtractorTester />} />
-            <Route path="/youtube-extractor" element={<YouTubeAudioExtractor />} />
             <Route path="/extract-and-prep" element={<ExtractAndPrepPage />} />
           </Routes>
         </main>
