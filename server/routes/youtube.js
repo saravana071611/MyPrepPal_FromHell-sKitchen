@@ -339,6 +339,32 @@ async function fetchVideoInfoFallback(videoId) {
   }
 }
 
+// Helper function to retry API calls
+async function retryOperation(operation, maxRetries = 3, delay = 1000) {
+  let lastError;
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`Attempt ${attempt}/${maxRetries}...`);
+      return await operation();
+    } catch (error) {
+      console.log(`Attempt ${attempt} failed: ${error.message}`);
+      lastError = error;
+      
+      // Don't wait on the last attempt
+      if (attempt < maxRetries) {
+        // Exponential backoff: wait longer between each retry
+        const waitTime = delay * Math.pow(2, attempt - 1);
+        console.log(`Waiting ${waitTime}ms before retry...`);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+      }
+    }
+  }
+  
+  // If we get here, all retries failed
+  throw lastError;
+}
+
 // Route to extract audio from YouTube video
 router.post('/extract-audio', async (req, res) => {
   try {
@@ -753,8 +779,10 @@ router.post('/extract-and-transcribe', async (req, res) => {
       // Try fallback method
       try {
         const videoId = extractVideoId(videoUrl);
-        videoInfo = await fetchVideoInfoFallback(videoId);
-        console.log('Using fallback video info method, found title:', videoInfo.videoDetails.title);
+        videoInfo = await retryOperation(async () => {
+          return await fetchVideoInfoFallback(videoId);
+        }, 2, 1000); // 2 retries with 1 second initial delay
+        console.log('Successfully fetched video info using fallback method');
       } catch (fallbackError) {
         console.error('Fallback video info also failed:', fallbackError.message);
         
@@ -1051,7 +1079,7 @@ router.get('/video-info', async (req, res) => {
     }
     
     // Set a short timeout for the initial ytdl-core attempt
-    const timeout = 8000; // 8 seconds timeout
+    const timeout = 30000; // 30 seconds timeout (increased from 8 seconds)
     const timeoutPromise = new Promise((_, reject) => 
       setTimeout(() => reject(new Error('YouTube API request timed out')), timeout)
     );
@@ -1063,14 +1091,16 @@ router.get('/video-info', async (req, res) => {
     try {
       console.log('Attempting to fetch info with yt-dlp...');
       
-      // Use youtube-dl-exec instead of ytdl-core
-      const ytdlpResult = await youtubeDl(cleanUrl, {
-        dumpSingleJson: true,
-        noCheckCertificate: true,
-        preferFreeFormats: true,
-        skipDownload: true,
-        simulate: true
-      });
+      // Use youtube-dl-exec with retry mechanism
+      const ytdlpResult = await retryOperation(async () => {
+        return await youtubeDl(cleanUrl, {
+          dumpSingleJson: true,
+          noCheckCertificate: true,
+          preferFreeFormats: true,
+          skipDownload: true,
+          simulate: true
+        });
+      }, 3, 2000); // 3 retries with 2 second initial delay
       
       console.log('Successfully fetched video info using yt-dlp');
       
@@ -1094,7 +1124,9 @@ router.get('/video-info', async (req, res) => {
       try {
         // Fallback to our custom method if yt-dlp fails
         console.log('Attempting to use fallback method...');
-        info = await fetchVideoInfoFallback(videoId);
+        info = await retryOperation(async () => {
+          return await fetchVideoInfoFallback(videoId);
+        }, 2, 1000); // 2 retries with 1 second initial delay
         console.log('Successfully fetched video info using fallback method');
       } catch (fallbackError) {
         console.error('Fallback method error:', fallbackError.message);
@@ -1158,7 +1190,16 @@ router.get('/video-info', async (req, res) => {
     } else if (error.message && error.message.includes('copyright')) {
       return res.status(403).json({ error: 'This video has copyright restrictions. Please try a different video.' });
     } else if (error.message && error.message.includes('timed out')) {
-      return res.status(408).json({ error: 'The request to YouTube timed out. Please try again or use a different video.' });
+      console.error('YouTube API timeout - details:', error);
+      return res.status(408).json({ 
+        error: 'The request to YouTube timed out. This could be due to YouTube API rate limits or network issues.',
+        suggestions: [
+          'Try again in a few minutes',
+          'Use a different YouTube video URL',
+          'Check your internet connection',
+          'If the problem persists, YouTube may be experiencing service issues'
+        ]
+      });
     } else if (error.message && error.message.includes('Status code: 410')) {
       return res.status(410).json({ error: 'This video is no longer available. Please try a different video.' });
     }
