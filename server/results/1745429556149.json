@@ -1,0 +1,11 @@
+{
+  "status": "completed",
+  "message": "Recipe processing completed successfully",
+  "result": {
+    "mealPrepInfo": {
+      "groceryList": "1. 1 whole wheat pie crust, fresh\n2. 1 cup vegetable stock, homemade preferred\n3. 2 large free-range eggs\n4. 1 cup sharp cheddar cheese, freshly grated\n5. 1 white onion, finely chopped\n6. 2 cloves garlic, minced\n7. 1 tablespoon olive oil, extra-virgin\n8. 1/2 cup bell peppers, finely chopped\n9. 1/2 cup mushrooms, fresh and sliced\n10. 1/2 cup spinach, fresh\n11. 1/2 teaspoon black pepper, freshly ground\n12. 1/2 teaspoon sea salt\n13. A handful of fresh basil leaves, finely chopped\n14. 1 tablespoon butter, unsalted\n15. 1/2 cup cherry tomatoes, halved.",
+      "cookingMethod": "1. Preheat the oven to 375°F.\n2. Roll out your whole wheat dough to fit your 9-inch pie dish.\n3. Press the dough into the dish and trim the edges.\n4. Dock the dough with a fork to prevent puffing.\n5. Bake the crust for 10-12 minutes, or until lightly golden.\n6. While the crust is baking, dice 2 medium onions and 2 cloves of garlic.\n7. Heat 2 tablespoons of olive oil in a pan over medium heat.\n8. Add the onions and garlic to the pan and sauté until translucent.\n9. Add 1 cup of sliced mushrooms to the pan and continue to sauté until mushrooms are softened.\n10. Add 1/2 cup of vegetable stock to the pan and let simmer until reduced by half.\n11. In a separate bowl, whisk together 4 eggs and 1/2 cup of skim milk.\n12. Once the stock has reduced, stir in the egg and milk mixture.\n13. Pour the mixture into the pre-baked crust.\n14. Bake the quiche in the oven for 25-30 minutes, or until set and lightly browned on top.\n15. Allow the quiche to cool for at least 10 minutes before slicing into 5 even portions.\n16. Store the remaining portions in the refrigerator for future meals."
+    },
+    "timestamp": "2025-04-23T17:33:39.317Z"
+  }
+}

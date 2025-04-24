@@ -1,0 +1,11 @@
+{
+  "status": "completed",
+  "message": "Recipe processing completed successfully",
+  "result": {
+    "mealPrepInfo": {
+      "groceryList": "1. 2 large free-range chicken breasts\n2. 1 tablespoon extra-virgin olive oil\n3. 2 cloves fresh garlic, minced\n4. 1 cup low-fat milk\n5. 2 tablespoons unsalted butter\n6. 1 cup whole grain flour\n7. 1/2 cup ice water\n8. 1 teaspoon sea salt\n9. 1/2 teaspoon freshly ground black pepper\n10. 2 cups mixed fresh vegetables (e.g. carrots, peas, corn)\n11. 1 large yellow onion, finely chopped\n12. 1 teaspoon dried thyme\n13. 1 large free-range egg, beaten (for egg wash)\n14. 1 tablespoon fresh parsley, chopped (for garnish)",
+      "cookingMethod": "1. Preheat the oven to 375°F.\n2. In a large skillet, heat 2 tablespoons of olive oil over medium heat.\n3. Add 1 diced onion, 2 diced carrots, and 2 diced celery stalks to the skillet and sauté until softened.\n4. Stir in 2 minced garlic cloves and continue to cook for another minute.\n5. Add 2 pounds of cubed chicken breast to the skillet, and cook until no longer pink.\n6. Sprinkle 1/4 cup of whole wheat flour over the chicken and vegetables, stirring until evenly coated.\n7. Gradually stir in 2 cups of low-fat milk, followed by 2 cups of low-sodium chicken broth.\n8. Let the mixture simmer for about 10 minutes until thickened.\n9. Stir in 1 cup of frozen peas and season with salt and pepper, then remove from heat.\n10. Roll out a whole grain pie crust and fit it into a 9-inch pie dish.\n11. Pour the chicken mixture into the pie crust.\n12. Roll out another whole grain pie crust and place it over the filling.\n13. Trim, fold, and crimp the edges of the crust, then cut slits in the top to allow steam to escape.\n14. Bake in the preheated oven for 30-35 minutes or until the crust is golden and the filling is bubbly.\n15. Let the pie cool for 10 minutes before serving.\n16. Divide into 5 portions for meal prep and store in the refrigerator."
+    },
+    "timestamp": "2025-04-23T18:20:03.539Z"
+  }
+}

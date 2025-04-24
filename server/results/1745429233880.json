@@ -1,0 +1,11 @@
+{
+  "status": "completed",
+  "message": "Recipe processing completed successfully",
+  "result": {
+    "mealPrepInfo": {
+      "groceryList": "1. 2 lean chicken breasts\n2. 1 tablespoon extra virgin olive oil\n3. 2 cloves fresh garlic, minced\n4. 1/2 cup low-fat milk\n5. 1 whole grain pie crust\n6. 2 cups fresh mixed vegetables",
+      "cookingMethod": "1. Preheat the oven to 350°F.\n2. Rinse and pat dry 5 chicken breasts.\n3. Season each side of the chicken with salt and pepper.\n4. Heat 2 tablespoons of olive oil in a large pan on medium-high heat.\n5. Sear the chicken for 4 minutes on each side.\n6. Transfer the chicken to a baking dish.\n7. Bake in the preheated oven for 25 minutes until the internal temperature reaches 165°F.\n8. While the chicken is baking, chop 2 bell peppers, 1 onion, and 3 cloves of garlic.\n9. Heat 1 tablespoon of olive oil in the same pan over medium heat.\n10. Add the chopped vegetables and sauté for 5 minutes.\n11. Season the vegetables with salt, pepper and 1 teaspoon of dried herbs.\n12. Remove the chicken from the oven and let it rest for 5 minutes.\n13. Slice each chicken breast into thin strips.\n14. Divide the chicken and vegetables evenly into 5 meal prep containers.\n15. Store in the refrigerator for up to 5 days."
+    },
+    "timestamp": "2025-04-23T17:28:12.813Z"
+  }
+}
